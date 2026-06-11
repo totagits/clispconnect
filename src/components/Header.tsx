@@ -73,10 +73,10 @@ export default function Header({ currentUser }: HeaderProps) {
               Public Registry (NRCL)
             </Link>
             <Link
-              href="/#pilot"
+              href="/#map"
               className="px-3 py-2 rounded-xl text-xs font-semibold tracking-wide text-body-gray hover:text-primary-indigo hover:bg-canvas-light transition-all"
             >
-              District #10 Pilot
+              Map View
             </Link>
             <Link
               href="/#faq"

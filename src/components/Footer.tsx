@@ -17,7 +17,7 @@ export default function Footer() {
               CLISP<span className="text-coast-teal font-normal">Connect</span>
             </span>
             <span className="text-[10px] uppercase font-bold bg-primary-indigo/30 text-sand-gold px-2 py-0.5 rounded border border-sand-gold/20">
-              Pilot Release
+              Production Registry
             </span>
           </div>
           <p className="text-xs text-body-gray max-w-sm leading-relaxed">
@@ -39,7 +39,7 @@ export default function Footer() {
               <Link href="/registry" className="hover:text-white transition-colors">National Registry (NRCL)</Link>
             </li>
             <li>
-              <Link href="/#pilot" className="hover:text-white transition-colors">District #10 Playbook</Link>
+              <Link href="/#map" className="hover:text-white transition-colors">GIS Registry Map</Link>
             </li>
             <li>
               <Link href="/#faq" className="hover:text-white transition-colors">Frequently Asked Questions</Link>

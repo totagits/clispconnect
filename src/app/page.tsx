@@ -208,7 +208,7 @@ export default async function LandingPage() {
       </section>
 
       {/* GIS Mapping Live Preview Embed */}
-      <section id="pilot" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
+      <section id="map" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-10">
           <span className="text-xs font-extrabold uppercase text-primary-indigo tracking-widest">Live Interactive Map</span>
           <h2 className="text-3xl font-black text-ink font-display tracking-tight leading-none">
