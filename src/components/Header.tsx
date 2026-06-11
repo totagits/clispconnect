@@ -15,54 +15,23 @@ export default function Header({ currentUser }: HeaderProps) {
   const pathname = usePathname();
   const permissions = getRolePermissions(currentUser.role);
 
-  // MIA Seal Vector SVG
-  const MiaSeal = () => (
-    <svg className="w-10 h-10 text-sand-gold" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="46" fill="#0A3D91" stroke="#D4A73B" strokeWidth="3" />
-      <circle cx="50" cy="50" r="41" fill="none" stroke="#D4A73B" strokeWidth="1" strokeDasharray="3,3" />
-      {/* Palm Tree Shield Silhouette */}
-      <path d="M48 65 V45 C48 40 40 40 38 34 C42 36 47 38 50 42 C53 38 58 36 62 34 C60 40 52 40 52 45 V65" fill="#D4A73B" />
-      {/* Water and Ship */}
-      <path d="M30 65 Q40 63 50 65 Q60 67 70 65" stroke="#D4A73B" strokeWidth="2" strokeLinecap="round" />
-      <path d="M38 60 L44 57 L46 60 Z" fill="#D4A73B" />
-      {/* Stars */}
-      <path d="M50 20 L52 25 L57 25 L53 28 L55 33 L50 30 L45 33 L47 28 L43 25 L48 25 Z" fill="#D4A73B" />
-      {/* Circular text representation */}
-      <path id="seal-text-path" d="M20,50 A30,30 0 1,1 80,50" fill="none" />
-      <text fill="#D4A73B" fontSize="6.5" fontWeight="bold" letterSpacing="1.2">
-        <textPath href="#seal-text-path" startOffset="50%" textAnchor="middle">
-          REPUBLIC OF LIBERIA
-        </textPath>
-      </text>
-    </svg>
-  );
-
-  // CLEF Logo Vector SVG
-  const ClefLogo = () => (
-    <svg className="w-9 h-9 text-coast-teal" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="46" fill="none" stroke="#1D8F8A" strokeWidth="2" />
-      {/* Stylized Hands holding a community leaf */}
-      <path d="M35 65 C35 55 45 45 50 40 C55 45 65 55 65 65 C65 75 55 80 50 80 C45 80 35 75 35 65 Z" fill="#1D8F8A" fillOpacity="0.2" stroke="#1D8F8A" strokeWidth="3" />
-      <path d="M43 55 C43 45 50 35 50 35 C50 35 57 45 57 55" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Small glowing gold community node */}
-      <circle cx="50" cy="30" r="6" fill="#D4A73B" className="pulse-glow" />
-    </svg>
-  );
-
-  return (
-    <header className="sticky top-0 z-40 w-full transition-all duration-300 border-b border-border-gray/30 glass-panel shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
-          
           {/* Logo Brand Section */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex items-center -space-x-2">
-                <div className="transform group-hover:rotate-6 transition-transform duration-300">
-                  <MiaSeal />
+              <div className="flex items-center -space-x-1.5">
+                <div className="transform group-hover:rotate-6 transition-transform duration-300 w-10 h-10 relative bg-white rounded-full p-0.5 shadow-sm border border-border-gray/30 flex items-center justify-center">
+                  <img
+                    src="/liberia-seal.png"
+                    alt="Republic of Liberia Seal"
+                    className="w-9 h-9 object-contain"
+                  />
                 </div>
-                <div className="transform group-hover:-rotate-6 transition-transform duration-300 z-10">
-                  <ClefLogo />
+                <div className="transform group-hover:-rotate-6 transition-transform duration-300 z-10 w-9 h-9 relative bg-white rounded-full p-0.5 shadow-sm border border-border-gray/30 flex items-center justify-center">
+                  <img
+                    src="/clef-logo.png"
+                    alt="CLEF Logo"
+                    className="w-8 h-8 object-contain"
+                  />
                 </div>
               </div>
               <div className="flex flex-col pl-1">

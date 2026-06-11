@@ -9,6 +9,7 @@ interface SettlementType {
   type: 'Urban' | 'Peri-Urban' | 'Rural' | 'Forest' | 'Coastal' | 'Remote';
   icon: React.ReactNode;
   gradient: string;
+  image?: string;
   description: string;
   stat: string;
 }
@@ -20,6 +21,7 @@ const SETTLEMENTS: SettlementType[] = [
     type: 'Urban',
     icon: <Building2 className="w-5 h-5 text-white" />,
     gradient: 'from-[#0A3D91] to-[#1D8F8A]',
+    image: '/montserrado.png',
     description: 'High-density urban communities, informal settlements, and active commercial zones (e.g. West Point, District #10 pilot centers).',
     stat: '1,200+ Communities Mapped'
   },
@@ -29,6 +31,7 @@ const SETTLEMENTS: SettlementType[] = [
     type: 'Forest',
     icon: <Trees className="w-5 h-5 text-white" />,
     gradient: 'from-[#2E7D32] to-[#1D8F8A]',
+    image: '/lofa.png',
     description: 'Deep agricultural and forest settlements. Coordinates tracked with high-canopy GPS receivers to offset signal blocks.',
     stat: '450+ Leadership Profiles'
   },
@@ -38,6 +41,7 @@ const SETTLEMENTS: SettlementType[] = [
     type: 'Coastal',
     icon: <Waves className="w-5 h-5 text-white" />,
     gradient: 'from-[#1D8F8A] to-[#0E4EC1]',
+    image: '/coastal.png',
     description: 'Scenic coastal fishing communities. Tracking water points, tides, and local artisan council structures.',
     stat: '280+ Mapped Settlements'
   },
@@ -47,6 +51,7 @@ const SETTLEMENTS: SettlementType[] = [
     type: 'Peri-Urban',
     icon: <Landmark className="w-5 h-5 text-white" />,
     gradient: 'from-[#D4A73B] to-[#BF2A2A]',
+    image: '/lofa.png',
     description: 'Fast-growing commercial hubs and transit towns. Monitoring cross-border trade, public market councils, and local youth networks.',
     stat: '850+ Registered Leaders'
   },
@@ -56,6 +61,7 @@ const SETTLEMENTS: SettlementType[] = [
     type: 'Coastal',
     icon: <Waves className="w-5 h-5 text-white" />,
     gradient: 'from-[#0A3D91] to-[#D4A73B]',
+    image: '/coastal.png',
     description: 'South-eastern coastal structures. Managing schools, clinic coordinates, and traditional elder succession records.',
     stat: '340+ Registered Nodes'
   },
@@ -65,6 +71,7 @@ const SETTLEMENTS: SettlementType[] = [
     type: 'Remote',
     icon: <Trees className="w-5 h-5 text-white" />,
     gradient: 'from-[#BF2A2A] to-[#2E7D32]',
+    image: '/lofa.png',
     description: 'Remote communities within dense forest tracks. Enabling low-bandwidth SMS-based reporting backups to MIA.',
     stat: '190+ Forest Communities'
   }
@@ -108,8 +115,18 @@ export default function Carousel() {
               isActive ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-95 z-0 pointer-events-none'
             }`}
           >
-            {/* Visual gradient backdrop */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${settlement.gradient} opacity-85 -z-10`} />
+            {/* Visual image backdrop if available, otherwise fallback to gradient */}
+            {settlement.image ? (
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-all duration-700"
+                style={{ backgroundImage: `url(${settlement.image})` }}
+              >
+                {/* Dark overlay to secure text readability */}
+                <div className="absolute inset-0 bg-black/45" />
+              </div>
+            ) : (
+              <div className={`absolute inset-0 bg-gradient-to-br ${settlement.gradient} opacity-85 -z-10`} />
+            )}
             
             {/* Fine geometric pattern lines on top */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] -z-10" />
