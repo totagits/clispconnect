@@ -1,7 +1,11 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { MapPin, Search, Filter, Layers, Compass, ZoomIn, ZoomOut, CheckCircle2, AlertTriangle, XCircle, User, Activity, FileText } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { 
+  MapPin, Search, Filter, Layers, Compass, ZoomIn, ZoomOut, 
+  CheckCircle2, AlertTriangle, XCircle, User, Activity, FileText,
+  ArrowLeft, ArrowUp, ArrowDown, Map as MapIcon, Globe
+} from 'lucide-react';
 
 export interface CommunityMapData {
   id: string;
@@ -95,6 +99,17 @@ const HIGHWAYS = [
   }
 ];
 
+// Helper to choose the best panorama image based on community geography
+const getPanoramaPath = (communityId: string) => {
+  if (['comm-buchanan', 'comm-greenville'].includes(communityId)) {
+    return '/panoramas/coastal.png';
+  }
+  if (['comm-sanniquellie', 'comm-voinjama', 'comm-gbarnga'].includes(communityId)) {
+    return '/panoramas/lofa.png';
+  }
+  return '/panoramas/monrovia.png';
+};
+
 interface MapGISProps {
   initialCommunities?: CommunityMapData[];
 }
@@ -105,6 +120,16 @@ export default function MapGIS({ initialCommunities = [] }: MapGISProps) {
   const [selectedCounty, setSelectedCounty] = useState<string>('ALL');
   const [mapMode, setMapMode] = useState<'TERRAIN' | 'SATELLITE'>('TERRAIN');
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [viewMode, setViewMode] = useState<'MAP' | 'STREETVIEW'>('MAP');
+  const [useLiveGoogle, setUseLiveGoogle] = useState(false);
+
+  // Drag-to-pan Street View States
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollOffset, setScrollOffset] = useState(400); // Default middle focus
+  const [isWalking, setIsWalking] = useState(false); // Walking transition flash
+
+  const panoramaRef = useRef<HTMLDivElement>(null);
 
   // SVG viewport dimensions
   const mapWidth = 800;
@@ -118,7 +143,6 @@ export default function MapGIS({ initialCommunities = [] }: MapGISProps) {
   // Convert GPS Coordinates (Lat/Long) to local Map Canvas SVG coordinates (X, Y)
   const projectCoords = (lat: number, lon: number) => {
     const x = ((lon - currentBounds.minLong) / (currentBounds.maxLong - currentBounds.minLong)) * mapWidth;
-    // Invert Y because SVG coordinates origin (0,0) starts at top-left
     const y = mapHeight - ((lat - currentBounds.minLat) / (currentBounds.maxLat - currentBounds.minLat)) * mapHeight;
     return { x, y };
   };
@@ -146,13 +170,69 @@ export default function MapGIS({ initialCommunities = [] }: MapGISProps) {
   const [selectedCommunity, setSelectedCommunity] = useState<CommunityMapData | null>(null);
 
   // Auto-set first match on county filter changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (filteredCommunities.length > 0) {
       setSelectedCommunity(filteredCommunities[0]);
     } else {
       setSelectedCommunity(null);
     }
   }, [selectedCounty]);
+
+  // Loop around calculations for the 360° image container (2400px wide, 800px viewport, max offset 1600px)
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setStartX(e.pageX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const dx = e.pageX - startX;
+    setStartX(e.pageX);
+    setScrollOffset(prev => {
+      let next = prev - dx * 1.2;
+      if (next < 0) next = 1600; // loop back
+      if (next > 1600) next = 0; // loop forward
+      return next;
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Touch handlers for mobile/PWA
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const clientX = e.touches[0].clientX;
+    const dx = clientX - startX;
+    setStartX(clientX);
+    setScrollOffset(prev => {
+      let next = prev - dx * 1.2;
+      if (next < 0) next = 1600;
+      if (next > 1600) next = 0;
+      return next;
+    });
+  };
+
+  // Walking transition animation
+  const handleWalk = () => {
+    setIsWalking(true);
+    setTimeout(() => {
+      setIsWalking(false);
+      // Shift offset randomly to simulate moving forward
+      setScrollOffset(prev => (prev + 200) % 1600);
+    }, 400);
+  };
+
+  // Calculate compass angle (1600px maps to 360 degrees)
+  const compassAngle = useMemo(() => {
+    return (scrollOffset / 1600) * 360;
+  }, [scrollOffset]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full relative">
@@ -264,145 +344,278 @@ export default function MapGIS({ initialCommunities = [] }: MapGISProps) {
         </div>
       </div>
 
-      {/* Interactive GIS SVG Canvas */}
-      <div className="lg:col-span-2 relative h-[550px] rounded-2xl border border-border-gray/30 shadow-md overflow-hidden flex items-center justify-center">
+      {/* Interactive GIS SVG Canvas OR Street View Panorama */}
+      <div className="lg:col-span-2 relative h-[550px] rounded-2xl border border-border-gray/30 shadow-md overflow-hidden bg-[#050D1A] flex items-center justify-center">
         
-        {/* Ocean Background Layer */}
-        <div className={`absolute inset-0 transition-colors duration-500 ${
-          mapMode === 'TERRAIN' ? 'bg-[#D2E2EE]' : 'bg-[#050D1A]'
-        }`} />
+        {viewMode === 'MAP' ? (
+          <>
+            {/* Ocean Background Layer */}
+            <div className={`absolute inset-0 transition-colors duration-500 ${
+              mapMode === 'TERRAIN' ? 'bg-[#D2E2EE]' : 'bg-[#050D1A]'
+            }`} />
 
-        <svg 
-          className="absolute inset-0 w-full h-full" 
-          viewBox={`0 0 ${mapWidth} ${mapHeight}`} 
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* 1. Liberia Landmass outline */}
-          <polygon
-            points={borderPointsString}
-            fill={mapMode === 'TERRAIN' ? '#EFF6F2' : '#111D33'}
-            stroke={mapMode === 'TERRAIN' ? '#C2DDD0' : '#1F3456'}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-            className="transition-colors duration-500"
-          />
+            <svg 
+              className="absolute inset-0 w-full h-full" 
+              viewBox={`0 0 ${mapWidth} ${mapHeight}`} 
+              preserveAspectRatio="xMidYMid meet"
+            >
+              {/* 1. Liberia Landmass outline */}
+              <polygon
+                points={borderPointsString}
+                fill={mapMode === 'TERRAIN' ? '#EFF6F2' : '#111D33'}
+                stroke={mapMode === 'TERRAIN' ? '#C2DDD0' : '#1F3456'}
+                strokeWidth="3.5"
+                strokeLinejoin="round"
+                className="transition-colors duration-500"
+              />
 
-          {/* 2. Swamps / Vegetation overlays (visual GIS cues) */}
-          {mapMode === 'TERRAIN' && (
-            <>
-              {/* Lofa / Northern forests */}
-              <path d="M 300,50 Q 330,80 390,40 T 420,120" fill="none" stroke="#D3EADF" strokeWidth="18" opacity="0.6" strokeLinecap="round" />
-              {/* Southeast forest zones */}
-              <path d="M 620,380 Q 690,410 740,390" fill="none" stroke="#D3EADF" strokeWidth="32" opacity="0.6" strokeLinecap="round" />
-            </>
-          )}
+              {/* 2. Forests overlays */}
+              {mapMode === 'TERRAIN' && (
+                <>
+                  <path d="M 300,50 Q 330,80 390,40 T 420,120" fill="none" stroke="#D3EADF" strokeWidth="18" opacity="0.6" strokeLinecap="round" />
+                  <path d="M 620,380 Q 690,410 740,390" fill="none" stroke="#D3EADF" strokeWidth="32" opacity="0.6" strokeLinecap="round" />
+                </>
+              )}
 
-          {/* 3. Grid line overlay for Satellite simulation */}
-          {mapMode === 'SATELLITE' && (
-            <g opacity="0.1" stroke="#38BDF8" strokeWidth="0.5">
-              <line x1="0" y1="100" x2={mapWidth} y2="100" />
-              <line x1="0" y1="200" x2={mapWidth} y2="200" />
-              <line x1="0" y1="300" x2={mapWidth} y2="300" />
-              <line x1="0" y1="400" x2={mapWidth} y2="400" />
-              <line x1="150" y1="0" x2="150" y2={mapHeight} />
-              <line x1="300" y1="0" x2="300" y2={mapHeight} />
-              <line x1="450" y1="0" x2="450" y2={mapHeight} />
-              <line x1="600" y1="0" x2="600" y2={mapHeight} />
-            </g>
-          )}
+              {/* 3. Grid line overlay for Satellite simulation */}
+              {mapMode === 'SATELLITE' && (
+                <g opacity="0.1" stroke="#38BDF8" strokeWidth="0.5">
+                  <line x1="0" y1="100" x2={mapWidth} y2="100" />
+                  <line x1="0" y1="200" x2={mapWidth} y2="200" />
+                  <line x1="0" y1="300" x2={mapWidth} y2="300" />
+                  <line x1="0" y1="400" x2={mapWidth} y2="400" />
+                  <line x1="150" y1="0" x2="150" y2={mapHeight} />
+                  <line x1="300" y1="0" x2="300" y2={mapHeight} />
+                  <line x1="450" y1="0" x2="450" y2={mapHeight} />
+                  <line x1="600" y1="0" x2="600" y2={mapHeight} />
+                </g>
+              )}
 
-          {/* 4. Infrastructure Transport Corridors (Highways) */}
-          {HIGHWAYS.map((hw, idx) => {
-            const pathPoints = hw.coords.map(pt => {
-              const { x, y } = projectCoords(pt.lat, pt.lon);
-              return `${x},${y}`;
-            }).join(' L ');
+              {/* 4. Infrastructure Transport Corridors (Highways) */}
+              {HIGHWAYS.map((hw, idx) => {
+                const pathPoints = hw.coords.map(pt => {
+                  const { x, y } = projectCoords(pt.lat, pt.lon);
+                  return `${x},${y}`;
+                }).join(' L ');
 
-            return (
-              <path
-                key={idx}
-                d={`M ${pathPoints}`}
-                fill="none"
-                stroke={mapMode === 'TERRAIN' ? '#E9A16E' : '#0EA5E9'}
-                strokeWidth={mapMode === 'TERRAIN' ? '2.5' : '1.5'}
-                strokeDasharray={mapMode === 'SATELLITE' ? '4,3' : 'none'}
-                opacity={mapMode === 'TERRAIN' ? '0.7' : '0.5'}
+                return (
+                  <path
+                    key={idx}
+                    d={`M ${pathPoints}`}
+                    fill="none"
+                    stroke={mapMode === 'TERRAIN' ? '#E9A16E' : '#0EA5E9'}
+                    strokeWidth={mapMode === 'TERRAIN' ? '2.5' : '1.5'}
+                    strokeDasharray={mapMode === 'SATELLITE' ? '4,3' : 'none'}
+                    opacity={mapMode === 'TERRAIN' ? '0.7' : '0.5'}
+                  >
+                    <title>{hw.name}</title>
+                  </path>
+                );
+              })}
+            </svg>
+
+            {/* GIS Compass Rose */}
+            <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-700 text-white flex flex-col items-center shadow-lg">
+              <Compass className="w-5 h-5 text-sand-gold animate-spin-slow" />
+              <span className="text-[8px] mt-1 font-bold">GIS NORTH</span>
+            </div>
+
+            {/* Zoom Controls */}
+            <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">
+              <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.5))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.75))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
+                <ZoomOut className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Render Interactive GPS Markers on the Map */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <div 
+                className="w-full h-full relative transition-transform duration-500 origin-center pointer-events-auto"
+                style={{ transform: `scale(${zoomLevel})` }}
               >
-                <title>{hw.name}</title>
-              </path>
-            );
-          })}
-        </svg>
+                {filteredCommunities.map((comm) => {
+                  const { x, y } = projectCoords(comm.latitude, comm.longitude);
+                  const isSelected = selectedCommunity?.id === comm.id;
+                  
+                  if (x < 0 || x > mapWidth || y < 0 || y > mapHeight) return null;
+                  
+                  const pinColor = 
+                    comm.verificationState === 'VERIFIED' ? 'text-civic-green fill-civic-green/20' :
+                    comm.verificationState === 'PENDING' ? 'text-sand-gold fill-sand-gold/20' : 'text-signal-red fill-signal-red/20';
 
-        {/* GIS Compass Rose */}
-        <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-700 text-white flex flex-col items-center shadow-lg">
-          <Compass className="w-5 h-5 text-sand-gold animate-spin-slow" />
-          <span className="text-[8px] mt-1 font-bold">GIS NORTH</span>
-        </div>
+                  return (
+                    <button
+                      key={comm.id}
+                      onClick={() => setSelectedCommunity(comm)}
+                      style={{ left: `${x}px`, top: `${y}px` }}
+                      className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center group z-30 cursor-pointer"
+                    >
+                      {isSelected && (
+                        <span className="absolute -top-3 w-8 h-8 bg-primary-indigo/30 rounded-full animate-ping pointer-events-none" />
+                      )}
+                      
+                      <MapPin className={`w-5 h-5 transition-all duration-300 drop-shadow-lg ${pinColor} ${
+                        isSelected ? 'scale-125 stroke-[2.5px] text-primary-indigo' : 'group-hover:scale-110'
+                      }`} />
+                      
+                      <span className={`mt-0.5 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase shadow-sm border transition-all pointer-events-none ${
+                        isSelected
+                          ? 'bg-slate-950 text-white border-slate-800'
+                          : 'bg-white/90 text-slate-800 border-slate-200 group-hover:bg-slate-950 group-hover:text-white'
+                      }`}>
+                        {comm.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        {/* Zoom Controls */}
-        <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">
-          <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.5))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.75))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
-            <ZoomOut className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Render Interactive GPS Markers on the Map */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="w-full h-full relative transition-transform duration-500 origin-center pointer-events-auto"
-            style={{ transform: `scale(${zoomLevel})` }}
-          >
-            {filteredCommunities.map((comm) => {
-              const { x, y } = projectCoords(comm.latitude, comm.longitude);
-              const isSelected = selectedCommunity?.id === comm.id;
+            {/* Low latency connection notification */}
+            <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-slate-700 text-[8px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>NATIONWIDE GIS CONNECTED</span>
+            </div>
+          </>
+        ) : (
+          /* STREET VIEW 360 PANORAMA VIEWPORT */
+          <div className="w-full h-full relative bg-slate-950 flex flex-col text-white">
+            
+            {/* Top Info Bar */}
+            <div className="absolute top-0 inset-x-0 bg-slate-950/80 backdrop-blur-md p-3 border-b border-slate-800 flex justify-between items-center z-40 text-xs">
+              <button 
+                onClick={() => setViewMode('MAP')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[10px] font-extrabold transition-all cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>BACK TO GIS MAP</span>
+              </button>
               
-              // Only render if coordinates falls within canvas viewport bounding box
-              if (x < 0 || x > mapWidth || y < 0 || y > mapHeight) return null;
-              
-              const pinColor = 
-                comm.verificationState === 'VERIFIED' ? 'text-civic-green fill-civic-green/20' :
-                comm.verificationState === 'PENDING' ? 'text-sand-gold fill-sand-gold/20' : 'text-signal-red fill-signal-red/20';
+              <div className="text-center">
+                <span className="font-extrabold block text-[11px] leading-tight">{selectedCommunity?.name}</span>
+                <span className="text-[9px] text-body-gray">
+                  GPS: {selectedCommunity?.latitude.toFixed(5)}° N, {selectedCommunity?.longitude.toFixed(5)}° W
+                </span>
+              </div>
 
-              return (
-                <button
-                  key={comm.id}
-                  onClick={() => setSelectedCommunity(comm)}
-                  style={{ left: `${x}px`, top: `${y}px` }}
-                  className="absolute transform -translate-x-1/2 -translate-y-full flex flex-col items-center group z-30 cursor-pointer"
+              {/* Mode Toggle: Custom virtual vs Live Google Iframe */}
+              <div className="flex gap-1.5 bg-slate-900 p-0.5 border border-slate-800 rounded-lg">
+                <button 
+                  onClick={() => setUseLiveGoogle(false)}
+                  className={`px-2 py-1 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                    !useLiveGoogle ? 'bg-primary-indigo text-white' : 'text-body-gray hover:text-white'
+                  }`}
                 >
-                  {/* Glowing bubble for selection */}
-                  {isSelected && (
-                    <span className="absolute -top-3 w-8 h-8 bg-primary-indigo/30 rounded-full animate-ping pointer-events-none" />
-                  )}
-                  
-                  {/* Pin Icon */}
-                  <MapPin className={`w-5 h-5 transition-all duration-300 drop-shadow-lg ${pinColor} ${
-                    isSelected ? 'scale-125 stroke-[2.5px] text-primary-indigo' : 'group-hover:scale-110'
-                  }`} />
-                  
-                  {/* Label tooltip */}
-                  <span className={`mt-0.5 px-2 py-0.5 rounded text-[8px] font-extrabold uppercase shadow-sm border transition-all pointer-events-none ${
-                    isSelected
-                      ? 'bg-slate-950 text-white border-slate-800'
-                      : 'bg-white/90 text-slate-800 border-slate-200 group-hover:bg-slate-950 group-hover:text-white'
-                  }`}>
-                    {comm.name}
-                  </span>
+                  <Globe className="w-3 h-3 inline mr-1" />
+                  <span>360° Virtual</span>
                 </button>
-              );
-            })}
-          </div>
-        </div>
+                <button 
+                  onClick={() => setUseLiveGoogle(true)}
+                  className={`px-2 py-1 rounded text-[9px] font-bold transition-all cursor-pointer ${
+                    useLiveGoogle ? 'bg-primary-indigo text-white' : 'text-body-gray hover:text-white'
+                  }`}
+                >
+                  <MapIcon className="w-3 h-3 inline mr-1" />
+                  <span>Live Google</span>
+                </button>
+              </div>
+            </div>
 
-        {/* Low latency connection notification */}
-        <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-slate-700 text-[8px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-md">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>NATIONWIDE GIS CONNECTED</span>
-        </div>
+            {/* Interactive display area */}
+            <div className="flex-grow relative h-full w-full select-none">
+              
+              {!useLiveGoogle ? (
+                /* 1. Custom Click-and-Drag Loopable 360° Panorama */
+                <div 
+                  className={`w-full h-full relative cursor-grab overflow-hidden flex items-center transition-all ${
+                    isDragging ? 'cursor-grabbing' : ''
+                  }`}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleMouseUp}
+                >
+                  {/* Panoramic wide-aspect image container */}
+                  <div 
+                    ref={panoramaRef}
+                    className="absolute h-full w-[2400px] bg-cover bg-center transition-transform duration-75 select-none pointer-events-none"
+                    style={{ 
+                      backgroundImage: `url(${selectedCommunity ? getPanoramaPath(selectedCommunity.id) : '/panoramas/monrovia.png'})`,
+                      transform: `translateX(${-scrollOffset}px)`
+                    }}
+                  />
+
+                  {/* Walking screen flash simulator */}
+                  {isWalking && (
+                    <div className="absolute inset-0 bg-white/70 animate-ping z-30 pointer-events-none" />
+                  )}
+
+                  {/* Street Navigation Arrows */}
+                  <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-40 pointer-events-none">
+                    <button
+                      onClick={handleWalk}
+                      className="w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-900 border border-slate-700 flex items-center justify-center text-emerald-400 pointer-events-auto cursor-pointer shadow-lg active:scale-95 transition-all hover:scale-105"
+                      title="Step Forward"
+                    >
+                      <ArrowUp className="w-5 h-5 animate-pulse" />
+                    </button>
+                    <span className="px-2 py-0.5 bg-slate-900/90 border border-slate-800 text-[8px] font-bold rounded uppercase tracking-wider text-body-gray">
+                      Move Down Path
+                    </span>
+                  </div>
+
+                  {/* Panoramic compass dial */}
+                  <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-700 flex flex-col items-center z-40">
+                    <Compass 
+                      className="w-8 h-8 text-sand-gold transition-transform duration-75" 
+                      style={{ transform: `rotate(${-compassAngle}deg)` }}
+                    />
+                    <span className="text-[7px] mt-1 font-bold text-body-gray">BEARING: {Math.round(compassAngle)}°</span>
+                  </div>
+
+                  {/* Drag instructional tooltip */}
+                  <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-slate-900/70 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-800 text-[8px] font-bold tracking-wider uppercase text-body-gray/80 pointer-events-none">
+                    ↕ Drag mouse or swipe to rotate 360°
+                  </div>
+                </div>
+              ) : (
+                /* 2. Live Google Maps street coordinates embed */
+                <div className="w-full h-full relative z-30 pt-14">
+                  {selectedCommunity ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://maps.google.com/maps?q=${selectedCommunity.latitude},${selectedCommunity.longitude}&z=17&t=k&output=embed`}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-xs text-body-gray italic">
+                      No coordinates selected.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Status bar */}
+            <div className="bg-slate-950 px-4 py-2 border-t border-slate-900 flex justify-between items-center text-[8px] font-bold text-body-gray z-40">
+              <span>ENVIRONMENT: SIMULATED PANORAMA</span>
+              <span className="text-emerald-400 flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                STREET VIEW PORTAL ONLINE
+              </span>
+            </div>
+
+          </div>
+        )}
       </div>
 
       {/* Drill-down Community Details Side-panel */}
@@ -490,13 +703,26 @@ export default function MapGIS({ initialCommunities = [] }: MapGISProps) {
           </div>
         )}
 
-        <div className="pt-3 border-t border-border-gray/30 mt-auto">
+        <div className="pt-3 border-t border-border-gray/30 mt-auto flex flex-col gap-2">
+          <button
+            onClick={() => {
+              if (selectedCommunity) setViewMode('STREETVIEW');
+            }}
+            disabled={!selectedCommunity}
+            className={`w-full py-2.5 rounded-xl bg-coast-teal hover:bg-[#166c68] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer ${
+              !selectedCommunity ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Launch Street View (360°)</span>
+          </button>
+          
           <a
             href={`/registry/${selectedCommunity?.id || ''}`}
             onClick={(e) => {
               if (!selectedCommunity) e.preventDefault();
             }}
-            className={`w-full py-2.5 rounded-xl bg-primary-indigo hover:bg-hover-indigo text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all ${
+            className={`w-full py-2.5 rounded-xl bg-primary-indigo hover:bg-hover-indigo text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all text-center ${
               !selectedCommunity ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
