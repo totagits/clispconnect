@@ -15,6 +15,11 @@ export default function Header({ currentUser }: HeaderProps) {
   const pathname = usePathname();
   const permissions = getRolePermissions(currentUser.role);
 
+  return (
+    <header className="sticky top-0 z-40 w-full transition-all duration-300 border-b border-border-gray/30 glass-panel shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20">
+          
           {/* Logo Brand Section */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
