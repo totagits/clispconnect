@@ -137,7 +137,7 @@ export default function ConsoleDashboard({ currentUser, stats, recentReports, au
         <div className="lg:col-span-2 p-5 rounded-2xl border border-border-gray/30 glass-panel shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-border-gray/20 pb-2">
             <h3 className="text-xs font-extrabold uppercase text-ink tracking-wider">Weekly Report Alert Trends</h3>
-            <span className="text-[9px] text-body-gray font-semibold">MIA Monitor Layer</span>
+            <span className="text-[9px] text-body-gray font-semibold">MLG Monitor Layer</span>
           </div>
           <div className="h-64 w-full text-xs">
             <ResponsiveContainer width="100%" height="100%">

@@ -17,7 +17,7 @@ export const DEMO_USERS: DemoUser[] = [
   {
     email: 'mia.admin@clispconnect.gov.lr',
     name: 'Hon. Tamba Kollie',
-    role: 'MIA National Admin',
+    role: 'MLG National Admin',
     description: 'Ministry oversight, national dashboard, policy control'
   },
   {
@@ -91,12 +91,12 @@ export interface RolePermissions {
 
 export const getRolePermissions = (role: string): RolePermissions => {
   return {
-    canApproveLeaders: ['Super Admin', 'MIA National Admin', 'CLEF National Admin', 'Registry Officer', 'County Coordinator', 'District Coordinator'].includes(role),
+    canApproveLeaders: ['Super Admin', 'MLG National Admin', 'CLEF National Admin', 'Registry Officer', 'County Coordinator', 'District Coordinator'].includes(role),
     canSubmitReport: ['Super Admin', 'Community Leader', 'Community Secretary'].includes(role),
     canManageTraining: ['Super Admin', 'CLEF National Admin', 'Trainer'].includes(role),
-    canManageHelpdesk: ['Super Admin', 'Community Desk Officer', 'MIA National Admin'].includes(role),
+    canManageHelpdesk: ['Super Admin', 'Community Desk Officer', 'MLG National Admin'].includes(role),
     canViewConsole: role !== 'Public Visitor',
-    isNationalAdmin: ['Super Admin', 'MIA National Admin', 'CLEF National Admin'].includes(role),
+    isNationalAdmin: ['Super Admin', 'MLG National Admin', 'CLEF National Admin'].includes(role),
     isCoordinator: ['County Coordinator', 'District Coordinator'].includes(role),
   };
 };

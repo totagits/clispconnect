@@ -12,7 +12,7 @@ model User {
   email        String        @unique
   name         String
   passwordHash String
-  role         String        // Super Admin, MIA National Admin, CLEF National Admin, County Coordinator, District Coordinator, Registry Officer, Community Desk Officer, Trainer, Community Leader, Community Secretary, Public Visitor
+  role         String        // Super Admin, MLG National Admin, CLEF National Admin, County Coordinator, District Coordinator, Registry Officer, Community Desk Officer, Trainer, Community Leader, Community Secretary, Public Visitor
   countyId     String?       // Assigned county if applicable
   districtId   String?       // Assigned district if applicable
   createdAt    DateTime      @default(now())
@@ -203,7 +203,7 @@ model WeeklyReport {
   healthTrends       String?   // Sanitation issues, clinic supply status, outbreaks
   infrastructureNeeds String?  // Water points, roads, power lines
   alertLevel         String    @default("LOW") // LOW, MEDIUM, HIGH
-  officialResponse   String?   // MIA comments
+  officialResponse   String?   // MLG comments
 }
 
 model HelpdeskTicket {

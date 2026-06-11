@@ -26,8 +26,8 @@ export default function Header({ currentUser }: HeaderProps) {
               <div className="flex items-center -space-x-2">
                 <div className="transform group-hover:rotate-6 transition-transform duration-300 w-10 h-10 relative bg-white rounded-full shadow-sm border border-border-gray/30 flex items-center justify-center overflow-hidden">
                   <img
-                    src="/liberia-seal.png"
-                    alt="Republic of Liberia Seal"
+                    src="/mlg-logo.png"
+                    alt="Ministry of Local Government Logo"
                     className="w-full h-full object-cover rounded-full"
                   />
                 </div>
@@ -44,7 +44,7 @@ export default function Header({ currentUser }: HeaderProps) {
                   CLISP<span className="text-coast-teal">Connect</span>
                 </span>
                 <span className="text-[9px] uppercase font-bold text-body-gray leading-none">
-                  MIA & CLEF Liberia
+                  MLG & CLEF Liberia
                 </span>
               </div>
             </Link>

@@ -76,12 +76,12 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <span className="text-[10px] uppercase font-bold text-body-gray tracking-widest">Sponsored & Overseen By</span>
-              <p className="text-xs font-bold text-primary-indigo">MIA Secretariat & CLEF National Steering Council</p>
+              <p className="text-xs font-bold text-primary-indigo">MLG Secretariat & CLEF National Steering Council</p>
             </div>
             
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-75">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-ink">Ministry of Internal Affairs (MIA)</span>
+                <span className="text-xs font-bold text-ink">Ministry of Local Government (MLG)</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-ink">Community Leadership Empowerment Forum (CLEF)</span>
@@ -152,7 +152,7 @@ export default function LandingPage() {
             <div className="space-y-1 mt-4">
               <h3 className="text-sm font-bold text-ink uppercase tracking-wide">4. Digital Reporting</h3>
               <p className="text-xs text-body-gray leading-relaxed font-light">
-                Weekly mobile reporting of local water access issues, health trends, and security incidents directly to the Ministry of Internal Affairs.
+                Weekly mobile reporting of local water access issues, health trends, and security incidents directly to the Ministry of Local Government.
               </p>
             </div>
           </div>
@@ -222,7 +222,7 @@ export default function LandingPage() {
             </div>
             <div className="bg-white/5 border border-white/15 p-5 rounded-2xl text-center space-y-1 backdrop-blur-sm">
               <span className="text-3xl font-extrabold text-sand-gold font-display">24h</span>
-              <p className="text-[10px] text-body-gray font-semibold uppercase tracking-wider">MIA Desk Response</p>
+              <p className="text-[10px] text-body-gray font-semibold uppercase tracking-wider">MLG Desk Response</p>
             </div>
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function LandingPage() {
               <span>How does the weekly digital reporting system work?</span>
             </h4>
             <p className="text-xs text-body-gray leading-relaxed pl-6">
-              Each formalized community designates a Secretary. Using a low-bandwidth mobile format, the Secretary inputs local infrastructure needs, public health trends, and security or weather incidents. This aggregates into the MIA Command Center for national monitoring.
+              Each formalized community designates a Secretary. Using a low-bandwidth mobile format, the Secretary inputs local infrastructure needs, public health trends, and security or weather incidents. This aggregates into the MLG Command Center for national monitoring.
             </p>
           </div>
         </div>
@@ -279,7 +279,7 @@ export default function LandingPage() {
               Ready to secure last-mile governance in your district?
             </h3>
             <p className="text-xs md:text-sm text-white/90 leading-relaxed font-light">
-              CLEF and the Ministry of Internal Affairs are preparing the next phase of community mapping. Sign up for technical resources, download the pilot playbook, or request registration guidelines.
+              CLEF and the Ministry of Local Government are preparing the next phase of community mapping. Sign up for technical resources, download the pilot playbook, or request registration guidelines.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <input

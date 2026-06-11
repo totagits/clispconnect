@@ -21,7 +21,7 @@ export default function Footer() {
             </span>
           </div>
           <p className="text-xs text-body-gray max-w-sm leading-relaxed">
-            A joint civic-tech initiative of the <strong>Ministry of Internal Affairs (MIA)</strong> and the <strong>Community Leadership Empowerment Forum (CLEF)</strong>, Republic of Liberia. Developed to secure last-mile decentralization.
+            A joint civic-tech initiative of the <strong>Ministry of Local Government (MLG)</strong> and the <strong>Community Leadership Empowerment Forum (CLEF)</strong>, Republic of Liberia. Developed to secure last-mile decentralization.
           </p>
           <div className="flex items-center gap-4 text-[10px] text-body-gray/80 pt-2">
             <span>© {new Date().getFullYear()} CLISPConnect. All rights reserved.</span>
@@ -52,7 +52,7 @@ export default function Footer() {
           <h4 className="text-xs uppercase font-extrabold text-sand-gold tracking-widest mb-4">Secretariat Support</h4>
           <p className="text-xs text-body-gray leading-relaxed mb-2">
             Community Leadership Secretariat<br />
-            Ministry of Internal Affairs<br />
+            Ministry of Local Government<br />
             Capitol Hill, Monrovia, Liberia
           </p>
           <p className="text-xs text-body-gray">

@@ -72,7 +72,7 @@ const SETTLEMENTS: SettlementType[] = [
     icon: <Trees className="w-5 h-5 text-white" />,
     gradient: 'from-[#BF2A2A] to-[#2E7D32]',
     image: '/lofa.png',
-    description: 'Remote communities within dense forest tracks. Enabling low-bandwidth SMS-based reporting backups to MIA.',
+    description: 'Remote communities within dense forest tracks. Enabling low-bandwidth SMS-based reporting backups to MLG.',
     stat: '190+ Forest Communities'
   }
 ];

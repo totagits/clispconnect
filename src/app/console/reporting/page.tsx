@@ -359,7 +359,7 @@ export default async function ReportingModulePage() {
                     {/* Official Response */}
                     {rep.officialResponse && (
                       <div className="bg-primary-indigo/5 border border-primary-indigo/15 rounded-xl p-2.5">
-                        <strong className="text-[9px] uppercase text-primary-indigo block tracking-wider">MIA Coordinator Feedback</strong>
+                        <strong className="text-[9px] uppercase text-primary-indigo block tracking-wider">MLG Coordinator Feedback</strong>
                         <p className="text-[10px] text-primary-indigo/80 leading-normal mt-0.5 italic">"{rep.officialResponse}"</p>
                       </div>
                     )}

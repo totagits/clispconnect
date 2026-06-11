@@ -27,7 +27,7 @@ export default function AboutPage() {
             Without official digital registers, these communities remain unrecognized. Local leadership boards lack official structures, and there is no direct channel to report local projects, infrastructure needs, or emergency incidents. 
           </p>
           <p className="text-xs text-body-gray leading-relaxed">
-            CLISP bridges this gap by creating the **National Registry of Communities and Leaders (NRCL)**. Overseen by the Ministry of Internal Affairs and implemented by CLEF, it creates a secure, georeferenced database of community nodes, maps structures, and initiates weekly digital reports.
+            CLISP bridges this gap by creating the **National Registry of Communities and Leaders (NRCL)**. Overseen by the Ministry of Local Government and implemented by CLEF, it creates a secure, georeferenced database of community nodes, maps structures, and initiates weekly digital reports.
           </p>
         </div>
         
@@ -36,9 +36,9 @@ export default function AboutPage() {
           <span className="text-xs font-bold uppercase text-sand-gold tracking-wider block">Collaborating Institutions</span>
           
           <div className="flex gap-4 items-start">
-            <span className="w-8 h-8 rounded-lg bg-primary-indigo/10 flex items-center justify-center font-bold text-xs text-primary-indigo shrink-0">MIA</span>
+            <span className="w-8 h-8 rounded-lg bg-primary-indigo/10 flex items-center justify-center font-bold text-xs text-primary-indigo shrink-0">MLG</span>
             <div className="space-y-1">
-              <h4 className="text-xs font-bold text-ink uppercase">Ministry of Internal Affairs</h4>
+              <h4 className="text-xs font-bold text-ink uppercase">Ministry of Local Government</h4>
               <p className="text-[11px] text-body-gray leading-normal">
                 National administrator responsible for local governance and oversight. Manages the Command Center, registry approvals, and policy directives.
               </p>
@@ -99,7 +99,7 @@ export default function AboutPage() {
               <h4 className="text-sm font-bold text-ink uppercase">Digital Reporting & Oversight</h4>
             </div>
             <p className="text-xs text-body-gray leading-relaxed">
-              Closes the reporting loop. Weekly ground-truth reports regarding water safety, healthcare logistics, and local disputes flow to the MIA console. This enables county directors to respond dynamically.
+              Closes the reporting loop. Weekly ground-truth reports regarding water safety, healthcare logistics, and local disputes flow to the MLG console. This enables county directors to respond dynamically.
             </p>
           </div>
 

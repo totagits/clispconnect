@@ -43,7 +43,7 @@ async function main() {
     { id: 'WOMEN_REP', title: "Women's Representative", category: 'Women', description: 'Represents and coordinates women interests and forums' },
     { id: 'YOUTH_REP', title: 'Youth Representative', category: 'Youth', description: 'Voice for youth mobilization and capacity programs' },
     { id: 'PWD_REP', title: 'PWD Representative', category: 'PWD', description: 'Advocates for inclusion and rights of Persons with Disabilities' },
-    { id: 'SEC', title: 'Community Secretary / Reporter', category: 'Functional', description: 'Maintains documentation and submits weekly reports to MIA' },
+    { id: 'SEC', title: 'Community Secretary / Reporter', category: 'Functional', description: 'Maintains documentation and submits weekly reports to MLG' },
   ];
 
   for (const role of leadershipRoles) {
@@ -63,7 +63,7 @@ async function main() {
       email: 'mia.admin@clispconnect.gov.lr',
       name: 'Hon. Tamba Kollie',
       passwordHash: 'clisp123',
-      role: 'MIA National Admin',
+      role: 'MLG National Admin',
     },
     {
       email: 'clef.admin@clispconnect.gov.lr',
@@ -412,7 +412,7 @@ async function main() {
       healthTrends: 'Increase in malaria cases reported among children; request bed net distribution.',
       infrastructureNeeds: 'Need for additional solar streetlights along the dark Keyhole-Chugbor link road.',
       alertLevel: 'LOW',
-      officialResponse: 'MIA Registry Desk: Report received. Coordinating with Ministry of Health for bed nets.',
+      officialResponse: 'MLG Registry Desk: Report received. Coordinating with Ministry of Health for bed nets.',
     },
     {
       communityId: 'comm-peaceisland',
@@ -427,7 +427,7 @@ async function main() {
       healthTrends: 'Public clinic running low on standard rehydration salts. Local clinic staff issued warning.',
       infrastructureNeeds: 'Bridge connecting Peace Island to the mainland has loose planks, dangerous for motorbikes. Critical repair needed.',
       alertLevel: 'MEDIUM',
-      officialResponse: 'MIA District Coordinator: Technical team dispatched to assess bridge planks.',
+      officialResponse: 'MLG District Coordinator: Technical team dispatched to assess bridge planks.',
     },
     {
       communityId: 'comm-gayetown',
@@ -500,7 +500,7 @@ async function main() {
         leaderId: activeLeader.id,
         programId: program.id,
         issueDate: new Date('2026-06-02'),
-        certificateNumber: 'CLEF-MIA-2026-0001',
+        certificateNumber: 'CLEF-MLG-2026-0001',
         isVerified: true,
       },
     });

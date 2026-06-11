@@ -234,7 +234,7 @@ export default async function VerificationPage() {
                   Your simulated role <strong>{currentUser.role}</strong> does not have clearance to sign leadership certificates or approve registries.
                 </p>
                 <p className="bg-white/40 p-2 rounded-lg border border-border-gray/20">
-                  Switch to <strong>MIA National Admin</strong> or <strong>District Coordinator</strong> to test approving this queue!
+                  Switch to <strong>MLG National Admin</strong> or <strong>District Coordinator</strong> to test approving this queue!
                 </p>
               </div>
             )}
@@ -287,7 +287,7 @@ export default async function VerificationPage() {
                     <div className="grid grid-cols-2 gap-8 border-t border-amber-300/50 pt-4 font-sans text-[9px] text-body-gray">
                       <div className="text-center">
                         <span className="font-mono text-ink block font-bold">~ Hon. Tamba Kollie ~</span>
-                        <span className="border-t border-border-gray/30 pt-0.5 inline-block">Minister, Ministry of Internal Affairs</span>
+                        <span className="border-t border-border-gray/30 pt-0.5 inline-block">Minister, Ministry of Local Government</span>
                       </div>
                       <div className="text-center">
                         <span className="font-mono text-ink block font-bold">~ Madame Satta Sheriff ~</span>
