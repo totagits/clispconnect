@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "CLISPConnect | Liberia National Community Leadership Registry",
   description: "CLISPConnect formalizes community leadership structures across Liberia, creates a national GIS-enabled registry (NRCL), and enables weekly ground-truth reporting to the Ministry of Internal Affairs.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/clef-logo.png",
   }
 };
 
