@@ -1,0 +1,239 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  name         String
+  passwordHash String
+  role         String        // Super Admin, MIA National Admin, CLEF National Admin, County Coordinator, District Coordinator, Registry Officer, Community Desk Officer, Trainer, Community Leader, Community Secretary, Public Visitor
+  countyId     String?       // Assigned county if applicable
+  districtId   String?       // Assigned district if applicable
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  auditLogs    AuditLog[]
+}
+
+model County {
+  id          String     @id
+  name        String     @unique
+  code        String     @unique
+  latitude    Float
+  longitude   Float
+  districts   District[]
+}
+
+model District {
+  id       String    @id
+  name     String
+  countyId String
+  county   County    @relation(fields: [countyId], references: [id], onDelete: Cascade)
+  clans    Clan[]
+
+  @@unique([name, countyId])
+}
+
+model Clan {
+  id         String   @id
+  name       String
+  districtId String
+  district   District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  towns      Town[]
+
+  @@unique([name, districtId])
+}
+
+model Town {
+  id     String  @id
+  name   String
+  clanId String
+  clan   Clan    @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  communities Community[]
+
+  @@unique([name, clanId])
+}
+
+model Community {
+  id                      String                @id @default(uuid())
+  name                    String
+  townId                  String
+  town                    Town                  @relation(fields: [townId], references: [id], onDelete: Cascade)
+  latitude                Float
+  longitude               Float
+  elevation               Float?
+  precision               String                @default("GPS_Standard") // GPS_High_Precision, GPS_Standard, Rough_Estimate
+  verificationState       String                @default("PENDING") // PENDING, VERIFIED, REJECTED
+  publicStatus            Boolean               @default(false)
+  officialNotes           String?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  
+  leaderProfiles          LeaderProfile[]
+  verificationRequests    VerificationRequest[]
+  trainingSessions        TrainingSession[]
+  weeklyReports           WeeklyReport[]
+  helpdeskTickets         HelpdeskTicket[]
+
+  @@unique([name, townId])
+}
+
+model LeadershipRole {
+  id             String          @id
+  title          String          @unique // e.g. Community Chairperson, Youth Representative, Women Representative, General Secretary, Traditional Chief, PWD Representative
+  category       String          // e.g. Traditional, Youth, Women, Functional, PWD
+  description    String?
+  leaderProfiles LeaderProfile[]
+}
+
+model LeaderProfile {
+  id                     String                 @id @default(uuid())
+  firstName              String
+  lastName               String
+  phone                  String
+  email                  String?
+  gender                 String                 // Male, Female, Other
+  isYouth                Boolean                @default(false)
+  isPWD                  Boolean                @default(false)
+  roleId                 String
+  role                   LeadershipRole         @relation(fields: [roleId], references: [id])
+  communityId            String
+  community              Community              @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  termStart              DateTime
+  termEnd                DateTime?
+  status                 String                 @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  attendanceRecords      AttendanceRecord[]
+  certificates           Certificate[]
+}
+
+model VerificationRequest {
+  id          String         @id @default(uuid())
+  communityId String
+  community   Community      @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  requesterId String
+  status      String         @default("PENDING") // PENDING, APPROVED, REJECTED
+  notes       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  approvals   ApprovalRecord[]
+}
+
+model ApprovalRecord {
+  id           String              @id @default(uuid())
+  requestId    String
+  request      VerificationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approverId   String
+  approverName String
+  decision     String              // APPROVED, REJECTED
+  comments     String?
+  timestamp    DateTime            @default(now())
+}
+
+model TrainingProgram {
+  id            String           @id
+  name          String
+  description   String
+  modules       TrainingModule[]
+  certificates  Certificate[]
+}
+
+model TrainingModule {
+  id          String          @id
+  title       String
+  description String
+  orderIndex  Int
+  programId   String
+  program     TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  sessions    TrainingSession[]
+}
+
+model TrainingSession {
+  id                String             @id @default(uuid())
+  moduleId          String
+  module            TrainingModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  trainerName       String
+  date              DateTime
+  location          String
+  communityId       String
+  community         Community          @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  attendanceRecords AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id              String          @id @default(uuid())
+  sessionId       String
+  session         TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  leaderId        String
+  leader          LeaderProfile   @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  status          String          // PRESENT, ABSENT, EXCUSED
+}
+
+model Certificate {
+  id                String          @id @default(uuid())
+  leaderId          String
+  leader            LeaderProfile   @relation(fields: [leaderId], references: [id], onDelete: Cascade)
+  programId         String
+  program           TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  issueDate         DateTime        @default(now())
+  certificateNumber String          @unique
+  isVerified        Boolean         @default(true)
+}
+
+model WeeklyReport {
+  id                 String    @id @default(uuid())
+  communityId        String
+  community          Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  reporterId         String    // User ID or reporter name
+  reporterName       String
+  weekEnding         DateTime
+  status             String    @default("SUBMITTED") // DRAFT, SUBMITTED, REVIEWED
+  submittedAt        DateTime  @default(now())
+  
+  // Reported metrics / categories
+  projectUpdates     String?   // Progress on local community projects
+  securityIncidents  String?   // Local conflicts, minor crimes, border issues
+  disasterIncidents  String?   // Flooding, fires, heavy erosion
+  healthTrends       String?   // Sanitation issues, clinic supply status, outbreaks
+  infrastructureNeeds String?  // Water points, roads, power lines
+  alertLevel         String    @default("LOW") // LOW, MEDIUM, HIGH
+  officialResponse   String?   // MIA comments
+}
+
+model HelpdeskTicket {
+  id          String    @id @default(uuid())
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  name        String
+  contactInfo String
+  category    String    // Data Correction, Registration Help, Dispute Resolution, Reporting Issue
+  subject     String
+  message     String
+  status      String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   String
+  ipAddress String?
+  timestamp DateTime @default(now())
+}
+
+model SystemSetting {
+  id          String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
