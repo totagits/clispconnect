@@ -23,19 +23,19 @@ export default function Header({ currentUser }: HeaderProps) {
           {/* Logo Brand Section */}
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex items-center -space-x-1.5">
-                <div className="transform group-hover:rotate-6 transition-transform duration-300 w-10 h-10 relative bg-white rounded-full p-0.5 shadow-sm border border-border-gray/30 flex items-center justify-center">
+              <div className="flex items-center -space-x-2">
+                <div className="transform group-hover:rotate-6 transition-transform duration-300 w-10 h-10 relative bg-white rounded-full shadow-sm border border-border-gray/30 flex items-center justify-center overflow-hidden">
                   <img
                     src="/liberia-seal.png"
                     alt="Republic of Liberia Seal"
-                    className="w-9 h-9 object-contain"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 </div>
-                <div className="transform group-hover:-rotate-6 transition-transform duration-300 z-10 w-9 h-9 relative bg-white rounded-full p-0.5 shadow-sm border border-border-gray/30 flex items-center justify-center">
+                <div className="transform group-hover:-rotate-6 transition-transform duration-300 z-10 w-10 h-10 relative bg-white rounded-full shadow-sm border border-border-gray/30 flex items-center justify-center overflow-hidden">
                   <img
                     src="/clef-logo.png"
                     alt="CLEF Logo"
-                    className="w-8 h-8 object-contain"
+                    className="w-full h-full object-cover rounded-full"
                   />
                 </div>
               </div>
