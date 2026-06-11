@@ -57,6 +57,17 @@ export default async function ReportingModulePage() {
     const infrastructureNeeds = formData.get('infrastructureNeeds') as string;
     const alertLevel = formData.get('alertLevel') as string;
 
+    const attachmentFile = formData.get('attachment') as File | null;
+    let attachmentName: string | null = null;
+    let attachmentData: string | null = null;
+
+    if (attachmentFile && attachmentFile.size > 0) {
+      attachmentName = attachmentFile.name;
+      const arrayBuffer = await attachmentFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      attachmentData = `data:${attachmentFile.type};base64,${buffer.toString('base64')}`;
+    }
+
     if (!communityId || !weekEndingString) {
       return;
     }
@@ -75,6 +86,8 @@ export default async function ReportingModulePage() {
         healthTrends: healthTrends || null,
         infrastructureNeeds: infrastructureNeeds || null,
         alertLevel,
+        attachmentName,
+        attachmentData,
       }
     });
 
@@ -210,6 +223,20 @@ export default async function ReportingModulePage() {
                 />
               </div>
 
+              {/* File Attachment Upload */}
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5 text-coast-teal" />
+                  <span>Attach Document or Photo (PDF, JPG, PNG)</span>
+                </label>
+                <input
+                  type="file"
+                  name="attachment"
+                  accept="image/*,application/pdf"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-ink file:mr-2.5 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-primary-indigo file:text-white hover:file:bg-hover-indigo cursor-pointer file:cursor-pointer"
+                />
+              </div>
+
               {/* Alert Level selector */}
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Local Alert Level</label>
@@ -342,9 +369,41 @@ export default async function ReportingModulePage() {
                       )}
                     </div>
 
+                    {/* Attachment preview / download */}
+                    {rep.attachmentData && (
+                      <div className="border-t border-border-gray/25 pt-2 space-y-1.5 mt-2">
+                        <span className="text-[9px] uppercase font-bold text-body-gray tracking-wider block">Attachment</span>
+                        {rep.attachmentData.startsWith('data:image/') ? (
+                          <div className="space-y-1">
+                            <a 
+                              href={rep.attachmentData} 
+                              download={rep.attachmentName || 'report-image'}
+                              className="inline-block group relative overflow-hidden rounded-xl border border-border-gray/30 bg-canvas-light"
+                            >
+                              <img 
+                                src={rep.attachmentData} 
+                                alt={rep.attachmentName || 'attachment'} 
+                                className="max-h-36 object-contain rounded-xl transition-all duration-300 hover:scale-[1.03]"
+                              />
+                            </a>
+                            <span className="block text-[9px] text-body-gray italic">{rep.attachmentName}</span>
+                          </div>
+                        ) : (
+                          <a 
+                            href={rep.attachmentData}
+                            download={rep.attachmentName || 'attachment.pdf'}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-canvas-light border border-border-gray/30 text-[10px] font-bold text-primary-indigo hover:text-hover-indigo transition-all"
+                          >
+                            <FileText className="w-4 h-4 text-primary-indigo" />
+                            <span>Download {rep.attachmentName || 'Document'}</span>
+                          </a>
+                        )}
+                      </div>
+                    )}
+
                     {/* Official Response */}
                     {rep.officialResponse && (
-                      <div className="bg-primary-indigo/5 border border-primary-indigo/15 rounded-xl p-2.5">
+                      <div className="bg-primary-indigo/5 border border-primary-indigo/15 rounded-xl p-2.5 mt-2">
                         <strong className="text-[9px] uppercase text-primary-indigo block tracking-wider">MLG Coordinator Feedback</strong>
                         <p className="text-[10px] text-primary-indigo/80 leading-normal mt-0.5 italic">"{rep.officialResponse}"</p>
                       </div>

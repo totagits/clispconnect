@@ -204,6 +204,8 @@ model WeeklyReport {
   infrastructureNeeds String?  // Water points, roads, power lines
   alertLevel         String    @default("LOW") // LOW, MEDIUM, HIGH
   officialResponse   String?   // MLG comments
+  attachmentName     String?   // Name of the uploaded file
+  attachmentData     String?   // Base64-encoded file contents or URL
 }
 
 model HelpdeskTicket {

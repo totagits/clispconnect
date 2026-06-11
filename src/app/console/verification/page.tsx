@@ -5,7 +5,7 @@ import prisma from '../../../lib/db';
 import { getCurrentUser } from '../../../lib/auth';
 import { getRolePermissions } from '../../../lib/session';
 import ConsoleNav from '../../../components/ConsoleNav';
-import { CheckSquare, ShieldCheck, AlertCircle, FileText, CheckCircle2, XCircle, Award, Printer } from 'lucide-react';
+import { CheckSquare, ShieldCheck, AlertCircle, FileText, CheckCircle2, XCircle, Award, Printer, PlusCircle } from 'lucide-react';
 
 export const revalidate = 0; // Fresh database query for approvals queue
 
@@ -53,6 +53,22 @@ export default async function VerificationPage() {
       program: true
     },
     orderBy: { issueDate: 'desc' }
+  });
+
+  // Fetch towns list for registration selector
+  const towns = await prisma.town.findMany({
+    include: {
+      clan: {
+        include: {
+          district: {
+            include: {
+              county: true
+            }
+          }
+        }
+      }
+    },
+    orderBy: { name: 'asc' }
   });
 
   // Server Action to approve a verification request
@@ -131,6 +147,64 @@ export default async function VerificationPage() {
     });
 
     revalidatePath('/console/verification');
+  }
+
+  // Server Action to request registering a new community
+  async function handleRegisterCommunity(formData: FormData) {
+    'use server';
+
+    const name = formData.get('name') as string;
+    const townId = formData.get('townId') as string;
+    const latitudeStr = formData.get('latitude') as string;
+    const longitudeStr = formData.get('longitude') as string;
+    const elevationStr = formData.get('elevation') as string;
+    const precision = formData.get('precision') as string;
+    const notes = formData.get('notes') as string;
+
+    if (!name || !townId || !latitudeStr || !longitudeStr) {
+      return;
+    }
+
+    const latitude = parseFloat(latitudeStr);
+    const longitude = parseFloat(longitudeStr);
+    const elevation = elevationStr ? parseFloat(elevationStr) : null;
+
+    // 1. Create the community in PENDING state
+    const newCommunity = await prisma.community.create({
+      data: {
+        name,
+        townId,
+        latitude,
+        longitude,
+        elevation,
+        precision,
+        verificationState: 'PENDING',
+        publicStatus: false,
+        officialNotes: notes || null,
+      }
+    });
+
+    // 2. Create the verification request
+    const request = await prisma.verificationRequest.create({
+      data: {
+        communityId: newCommunity.id,
+        requesterId: currentUser.email,
+        status: 'PENDING',
+        notes: `Community registration profiling requested. Coordinates: ${latitudeStr}, ${longitudeStr}. Notes: ${notes || 'None'}`,
+      }
+    });
+
+    // 3. Log in the system audit logs
+    await prisma.auditLog.create({
+      data: {
+        action: 'COMMUNITY_REGISTER_REQUEST',
+        details: `Requested community registration for: [${name}] in town ID [${townId}]. Request ID: [${request.id}].`,
+        userId: currentUser.email,
+      }
+    });
+
+    revalidatePath('/console/verification');
+    revalidatePath('/registry');
   }
 
   return (
@@ -224,6 +298,113 @@ export default async function VerificationPage() {
               </div>
             )}
           </div>
+
+          {/* New Panel: Register Community Profiling Request */}
+          <div className="p-5 rounded-2xl glass-panel border border-border-gray/30 shadow-md space-y-4">
+            <div className="border-b border-border-gray/30 pb-3 flex items-center gap-1.5">
+              <PlusCircle className="w-5 h-5 text-coast-teal" />
+              <span className="text-sm font-bold text-ink uppercase tracking-wide">
+                Profile New Community
+              </span>
+            </div>
+
+            <form action={handleRegisterCommunity} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Community Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  placeholder="e.g. Saclepea Community"
+                  className="w-full px-3 py-2 rounded-xl glass-input text-ink"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Town / Settlement</label>
+                <select
+                  name="townId"
+                  required
+                  className="w-full px-3 py-2 rounded-xl glass-input text-ink cursor-pointer bg-white"
+                >
+                  {towns.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.clan.name} · {t.clan.district.name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Latitude (° N)</label>
+                  <input
+                    type="number"
+                    name="latitude"
+                    step="any"
+                    required
+                    placeholder="e.g. 6.2758"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-ink"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Longitude (° W)</label>
+                  <input
+                    type="number"
+                    name="longitude"
+                    step="any"
+                    required
+                    placeholder="e.g. -10.7523"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-ink"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Elevation (m)</label>
+                  <input
+                    type="number"
+                    name="elevation"
+                    step="any"
+                    placeholder="e.g. 12.4"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-ink"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">GPS Precision</label>
+                  <select
+                    name="precision"
+                    className="w-full px-3 py-2 rounded-xl glass-input text-ink cursor-pointer bg-white"
+                  >
+                    <option value="GPS_Standard">GPS Standard</option>
+                    <option value="GPS_High_Precision">GPS High Precision</option>
+                    <option value="Rough_Estimate">Rough Estimate</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">Boundary / Profiling Notes</label>
+                <textarea
+                  name="notes"
+                  rows={2}
+                  placeholder="Describe landmarks, borders, or dispute risks if any..."
+                  className="w-full px-3 py-2 rounded-xl glass-input text-ink"
+                />
+              </div>
+
+              <div className="pt-1">
+                <button
+                  type="submit"
+                  className="w-full py-2.5 rounded-xl bg-coast-teal hover:bg-[#166c68] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Submit Registration Request</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
         {/* Right: Certified Leaders & Certificate Previewer (7 Cols) */}
@@ -252,7 +433,7 @@ export default async function VerificationPage() {
                     {/* Certificate Header */}
                     <div className="text-center space-y-1">
                       <p className="text-[9px] font-sans font-black tracking-widest text-[#0A3D91] uppercase">REPUBLIC OF LIBERIA</p>
-                      <p className="text-[10px] font-sans font-extrabold text-[#D4A73B] uppercase tracking-wide">MINISTRY OF INTERNAL AFFAIRS & CLEF SECRETARIAT</p>
+                      <p className="text-[10px] font-sans font-extrabold text-[#D4A73B] uppercase tracking-wide">MINISTRY OF LOCAL GOVERNMENT & CLEF SECRETARIAT</p>
                       <h4 className="text-sm sm:text-base font-bold text-[#0A3D91] border-b border-amber-300 pb-2 max-w-md mx-auto">
                         Official Leadership Certificate
                       </h4>
