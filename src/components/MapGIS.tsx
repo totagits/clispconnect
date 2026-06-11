@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { MapPin, Search, Filter, Layers, Compass, ZoomIn, ZoomOut, CheckCircle2, AlertTriangle, XCircle, User, Activity, FileText } from 'lucide-react';
 
-interface CommunityMapData {
+export interface CommunityMapData {
   id: string;
   name: string;
   latitude: number;
@@ -17,67 +17,156 @@ interface CommunityMapData {
   weeklyReportsCount: number;
 }
 
-const COMMUNITIES_MOCK: CommunityMapData[] = [
-  { id: 'comm-chugbor', name: 'Old Road Chugbor', latitude: 6.2758, longitude: -10.7523, elevation: 12.4, precision: 'GPS_High_Precision', verificationState: 'VERIFIED', notes: 'CLEF Pilot headquarters. Fully mapped, structures and water points logged.', town: 'Congotown East', leadersCount: 6, weeklyReportsCount: 1 },
-  { id: 'comm-gayetown', name: 'Gayetown', latitude: 6.2795, longitude: -10.7450, elevation: 14.1, precision: 'GPS_Standard', verificationState: 'VERIFIED', notes: 'Active weekly reporting since launch. 3 main water points logged.', town: 'Congotown East', leadersCount: 1, weeklyReportsCount: 1 },
-  { id: 'comm-peaceisland', name: 'Peace Island', latitude: 6.2910, longitude: -10.7312, elevation: 5.2, precision: 'GPS_Standard', verificationState: 'VERIFIED', notes: 'Island community with high density, requires specific water point monitoring.', town: 'Congotown West', leadersCount: 1, weeklyReportsCount: 1 },
-  { id: 'comm-keyhole', name: 'Keyhole', latitude: 6.2715, longitude: -10.7589, elevation: 10.8, precision: 'GPS_Standard', verificationState: 'VERIFIED', notes: 'Commercial activity hub, border roads verified.', town: 'Congotown East', leadersCount: 0, weeklyReportsCount: 0 },
-  { id: 'comm-gsaroad', name: 'GSA Road Community', latitude: 6.2730, longitude: -10.7180, elevation: 16.5, precision: 'GPS_Standard', verificationState: 'PENDING', notes: 'Registration details submitted, leadership elections pending verification.', town: 'Congotown West', leadersCount: 0, weeklyReportsCount: 0 },
-  { id: 'comm-fiamah', name: 'Fiamah Community', latitude: 6.2912, longitude: -10.7611, elevation: 9.3, precision: 'GPS_High_Precision', verificationState: 'VERIFIED', notes: 'Densely populated, youth leadership fully structured.', town: 'Congotown East', leadersCount: 0, weeklyReportsCount: 0 },
-  { id: 'comm-matadi', name: 'Matadi Community', latitude: 6.2818, longitude: -10.7801, elevation: 8.1, precision: 'Rough_Estimate', verificationState: 'VERIFIED', notes: 'Housing estate area, includes public playground.', town: 'Congotown East', leadersCount: 0, weeklyReportsCount: 0 },
-  { id: 'comm-sayetown', name: 'Saye Town', latitude: 6.3005, longitude: -10.7885, elevation: 11.2, precision: 'GPS_Standard', verificationState: 'REJECTED', notes: 'Boundary dispute with neighboring clan. Verification put on hold.', town: 'Congotown West', leadersCount: 0, weeklyReportsCount: 0 },
+// Bounding box bounds for dynamic geographic projection
+const COUNTY_BOUNDS: Record<string, { minLong: number, maxLong: number, minLat: number, maxLat: number }> = {
+  ALL: { minLong: -11.6, maxLong: -7.3, minLat: 4.3, maxLat: 8.6 },
+  MONT: { minLong: -10.95, maxLong: -10.45, minLat: 6.18, maxLat: 6.52 },
+  NIMB: { minLong: -9.15, maxLong: -8.25, minLat: 5.80, maxLat: 7.65 },
+  LOFA: { minLong: -10.60, maxLong: -9.40, minLat: 7.20, maxLat: 8.60 },
+  GBAS: { minLong: -10.45, maxLong: -9.45, minLat: 5.50, maxLat: 6.40 },
+  SINO: { minLong: -9.30, maxLong: -8.20, minLat: 4.70, maxLat: 5.75 },
+  MARG: { minLong: -10.55, maxLong: -10.15, minLat: 6.25, maxLat: 6.75 },
+  BONG: { minLong: -10.20, maxLong: -9.10, minLat: 6.40, maxLat: 7.40 },
+  MARY: { minLong: -8.00, maxLong: -7.40, minLat: 4.30, maxLat: 5.00 },
+  GGED: { minLong: -8.50, maxLong: -7.80, minLat: 5.50, maxLat: 6.40 },
+  RGEE: { minLong: -8.20, maxLong: -7.60, minLat: 4.80, maxLat: 5.60 },
+  CMNT: { minLong: -11.60, maxLong: -11.00, minLat: 6.60, maxLat: 7.40 },
+  BOMI: { minLong: -11.10, maxLong: -10.60, minLat: 6.50, maxLat: 7.00 },
+  GBAR: { minLong: -10.80, maxLong: -10.00, minLat: 7.00, maxLat: 7.90 },
+  RCES: { minLong: -9.80, maxLong: -9.20, minLat: 5.30, maxLat: 6.10 },
+  GKRU: { minLong: -8.60, maxLong: -8.00, minLat: 4.50, maxLat: 5.10 },
+};
+
+const COUNTIES_LIST = [
+  { id: 'ALL', name: 'All of Liberia' },
+  { id: 'MONT', name: 'Montserrado' },
+  { id: 'NIMB', name: 'Nimba' },
+  { id: 'LOFA', name: 'Lofa' },
+  { id: 'GBAS', name: 'Grand Bassa' },
+  { id: 'SINO', name: 'Sinoe' },
+  { id: 'MARY', name: 'Maryland' },
+  { id: 'GGED', name: 'Grand Gedeh' },
+  { id: 'RGEE', name: 'River Gee' },
+  { id: 'CMNT', name: 'Grand Cape Mount' },
+  { id: 'BOMI', name: 'Bomi' },
+  { id: 'GBAR', name: 'Gbarpolu' },
+  { id: 'MARG', name: 'Margibi' },
+  { id: 'BONG', name: 'Bong' },
+  { id: 'RCES', name: 'Rivercess' },
+  { id: 'GKRU', name: 'Grand Kru' },
 ];
 
-export default function MapGIS() {
+// High-fidelity border coordinates of Liberia to draw the landmass
+const BORDER_COORDS = [
+  { lat: 6.75, lon: -11.35 }, // Cape Mount
+  { lat: 7.40, lon: -10.80 }, // Western border
+  { lat: 8.25, lon: -10.35 }, // Northwest corner
+  { lat: 8.58, lon: -9.98 },  // Northernmost tip (Lofa)
+  { lat: 7.90, lon: -9.10 },  // North border
+  { lat: 7.50, lon: -8.45 },  // Nimba northeast tip
+  { lat: 6.70, lon: -8.20 },  // Mid-east border
+  { lat: 5.90, lon: -8.10 },  // East border
+  { lat: 5.20, lon: -7.40 },  // Southeast border
+  { lat: 4.37, lon: -7.70 },  // Cape Palmas / Harper
+  { lat: 5.01, lon: -9.04 },  // Greenville coast
+  { lat: 5.88, lon: -10.05 }, // Buchanan coast
+  { lat: 6.31, lon: -10.81 }, // Monrovia coast
+];
+
+// Major Liberian Highways coordinates
+const HIGHWAYS = [
+  {
+    name: 'Monrovia-Gbarnga Highway',
+    coords: [
+      { lat: 6.31, lon: -10.81 }, // Monrovia
+      { lat: 6.51, lon: -10.30 }, // Kakata
+      { lat: 7.01, lon: -9.75 },  // Gbarnga
+      { lat: 7.36, lon: -8.70 }   // Sanniquellie
+    ]
+  },
+  {
+    name: 'Coastal Corridor Route',
+    coords: [
+      { lat: 6.31, lon: -10.81 }, // Monrovia
+      { lat: 5.88, lon: -10.05 }, // Buchanan
+      { lat: 5.01, lon: -9.04 },  // Greenville
+      { lat: 4.37, lon: -7.70 }   // Harper
+    ]
+  }
+];
+
+interface MapGISProps {
+  initialCommunities?: CommunityMapData[];
+}
+
+export default function MapGIS({ initialCommunities = [] }: MapGISProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterState, setFilterState] = useState<string>('ALL');
+  const [selectedCounty, setSelectedCounty] = useState<string>('ALL');
   const [mapMode, setMapMode] = useState<'TERRAIN' | 'SATELLITE'>('TERRAIN');
-  const [selectedCommunity, setSelectedCommunity] = useState<CommunityMapData | null>(COMMUNITIES_MOCK[0]);
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  // Bounds for District #10 GPS projection
-  const bounds = {
-    minLong: -10.795,
-    maxLong: -10.710,
-    minLat: 6.265,
-    maxLat: 6.305
-  };
-
-  // SVG dimensions
+  // SVG viewport dimensions
   const mapWidth = 800;
   const mapHeight = 500;
 
-  // Convert GPS Coordinates to Local Map Canvas (X, Y)
+  // Retrieve current projection bounds based on selected county
+  const currentBounds = useMemo(() => {
+    return COUNTY_BOUNDS[selectedCounty] || COUNTY_BOUNDS.ALL;
+  }, [selectedCounty]);
+
+  // Convert GPS Coordinates (Lat/Long) to local Map Canvas SVG coordinates (X, Y)
   const projectCoords = (lat: number, lon: number) => {
-    const x = ((lon - bounds.minLong) / (bounds.maxLong - bounds.minLong)) * mapWidth;
-    // Invert Y because SVG coordinates start at top-left
-    const y = mapHeight - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * mapHeight;
+    const x = ((lon - currentBounds.minLong) / (currentBounds.maxLong - currentBounds.minLong)) * mapWidth;
+    // Invert Y because SVG coordinates origin (0,0) starts at top-left
+    const y = mapHeight - ((lat - currentBounds.minLat) / (currentBounds.maxLat - currentBounds.minLat)) * mapHeight;
     return { x, y };
   };
 
-  // Filtered communities
+  // Build the landmass outline string
+  const borderPointsString = useMemo(() => {
+    return BORDER_COORDS.map(pt => {
+      const { x, y } = projectCoords(pt.lat, pt.lon);
+      return `${x},${y}`;
+    }).join(' ');
+  }, [currentBounds]);
+
+  // Filtered communities to display on map and side panel
   const filteredCommunities = useMemo(() => {
-    return COMMUNITIES_MOCK.filter(comm => {
+    return initialCommunities.filter(comm => {
       const matchesSearch = comm.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             comm.town.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFilter = filterState === 'ALL' || comm.verificationState === filterState;
-      return matchesSearch && matchesFilter;
+      const matchesCounty = selectedCounty === 'ALL' || comm.town.toLowerCase().includes(COUNTIES_LIST.find(c => c.id === selectedCounty)?.name.toLowerCase() || 'impossible_string');
+      return matchesSearch && matchesFilter && matchesCounty;
     });
-  }, [searchQuery, filterState]);
+  }, [initialCommunities, searchQuery, filterState, selectedCounty]);
+
+  // Handle active community pin selection
+  const [selectedCommunity, setSelectedCommunity] = useState<CommunityMapData | null>(null);
+
+  // Auto-set first match on county filter changes
+  React.useEffect(() => {
+    if (filteredCommunities.length > 0) {
+      setSelectedCommunity(filteredCommunities[0]);
+    } else {
+      setSelectedCommunity(null);
+    }
+  }, [selectedCounty]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full relative">
       
       {/* Search & Filter Control Panel */}
       <div className="lg:col-span-1 space-y-4 flex flex-col justify-between h-[550px] p-5 rounded-2xl glass-panel border border-border-gray/30 shadow-md">
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto pr-1">
           <div className="flex items-center justify-between border-b border-border-gray/30 pb-3">
             <span className="text-sm font-extrabold text-primary-indigo font-display flex items-center gap-1.5">
               <Filter className="w-4 h-4 text-coast-teal" />
               <span>Map Controller</span>
             </span>
             <span className="text-[10px] bg-primary-indigo/10 text-primary-indigo font-bold px-2 py-0.5 rounded-full border border-primary-indigo/10">
-              District #10 Pilot
+              Liberia GIS Registry
             </span>
           </div>
 
@@ -86,11 +175,25 @@ export default function MapGIS() {
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-body-gray/60" />
             <input
               type="text"
-              placeholder="Search community name..."
+              placeholder="Search community..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-xs rounded-xl glass-input text-ink"
             />
+          </div>
+
+          {/* County Selector */}
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold text-body-gray tracking-wider">County / Region</label>
+            <select
+              value={selectedCounty}
+              onChange={(e) => setSelectedCounty(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl glass-input text-ink cursor-pointer bg-white"
+            >
+              {COUNTIES_LIST.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Filter Verification State */}
@@ -101,7 +204,7 @@ export default function MapGIS() {
                 <button
                   key={state}
                   onClick={() => setFilterState(state)}
-                  className={`px-2 py-1.5 text-[10px] font-bold rounded-lg transition-all border ${
+                  className={`px-2 py-1.5 text-[10px] font-bold rounded-lg transition-all border cursor-pointer ${
                     filterState === state
                       ? 'bg-primary-indigo text-white border-primary-indigo'
                       : 'bg-white/40 text-body-gray border-border-gray/30 hover:bg-white/80'
@@ -122,7 +225,7 @@ export default function MapGIS() {
             <div className="flex gap-2 p-1 bg-white/50 border border-border-gray/30 rounded-xl">
               <button
                 onClick={() => setMapMode('TERRAIN')}
-                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
+                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
                   mapMode === 'TERRAIN' ? 'bg-primary-indigo text-white shadow-sm' : 'text-body-gray hover:text-ink'
                 }`}
               >
@@ -130,29 +233,29 @@ export default function MapGIS() {
               </button>
               <button
                 onClick={() => setMapMode('SATELLITE')}
-                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
+                className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
                   mapMode === 'SATELLITE' ? 'bg-primary-indigo text-white shadow-sm' : 'text-body-gray hover:text-ink'
                 }`}
               >
-                Satellite Sim
+                Satellite Grid
               </button>
             </div>
           </div>
         </div>
 
         {/* Mapped Summary List */}
-        <div className="flex-grow overflow-y-auto mt-4 max-h-[180px] space-y-1 pr-1 border-t border-border-gray/30 pt-3">
+        <div className="flex-grow overflow-y-auto mt-4 max-h-[160px] space-y-1 pr-1 border-t border-border-gray/30 pt-3">
           <p className="text-[9px] uppercase font-bold text-body-gray tracking-widest mb-1">Results ({filteredCommunities.length})</p>
           {filteredCommunities.map((comm) => (
             <button
               key={comm.id}
               onClick={() => setSelectedCommunity(comm)}
-              className={`w-full text-left p-1.5 rounded-lg text-xs font-semibold flex items-center justify-between hover:bg-primary-indigo/5 transition-all ${
+              className={`w-full text-left p-1.5 rounded-lg text-xs font-semibold flex items-center justify-between hover:bg-primary-indigo/5 transition-all cursor-pointer ${
                 selectedCommunity?.id === comm.id ? 'bg-primary-indigo/10 text-primary-indigo border-l-2 border-primary-indigo pl-2' : 'text-ink'
               }`}
             >
               <span className="truncate">{comm.name}</span>
-              <span className={`w-2 h-2 rounded-full ${
+              <span className={`w-2 h-2 rounded-full shrink-0 ${
                 comm.verificationState === 'VERIFIED' ? 'bg-civic-green' :
                 comm.verificationState === 'PENDING' ? 'bg-sand-gold' : 'bg-signal-red'
               }`} />
@@ -162,67 +265,84 @@ export default function MapGIS() {
       </div>
 
       {/* Interactive GIS SVG Canvas */}
-      <div className="lg:col-span-2 relative h-[550px] rounded-2xl border border-border-gray/30 shadow-md overflow-hidden bg-slate-900 flex items-center justify-center">
+      <div className="lg:col-span-2 relative h-[550px] rounded-2xl border border-border-gray/30 shadow-md overflow-hidden flex items-center justify-center">
         
-        {/* Terrain layer or Satellite simulated layer background */}
-        {mapMode === 'TERRAIN' ? (
-          <div className="absolute inset-0 bg-[#E8F0E6] transition-colors duration-300">
-            {/* Simulated River */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${mapWidth} ${mapHeight}`} preserveAspectRatio="none">
-              {/* Stockton Creek / Mesurado River simulator */}
-              <path d="M-50,250 Q150,180 300,280 T650,200 T850,220" fill="none" stroke="#A5C9EB" strokeWidth="24" strokeLinecap="round" opacity="0.8" />
-              <path d="M-50,250 Q150,180 300,280 T650,200 T850,220" fill="none" stroke="#B9D7F2" strokeWidth="12" strokeLinecap="round" opacity="0.8" />
-              
-              {/* Secondary swamp water paths */}
-              <path d="M400,280 Q500,420 520,550" fill="none" stroke="#B9D7F2" strokeWidth="6" opacity="0.5" />
-              
-              {/* Swamp vegetation patterns (District 10 swamp edges) */}
-              <rect x="420" y="320" width="100" height="80" rx="10" fill="#2E7D32" fillOpacity="0.05" />
-              <text x="470" y="360" fill="#2E7D32" fillOpacity="0.3" fontSize="10" fontWeight="bold" textAnchor="middle">Swamp Zone</text>
-              <rect x="180" y="100" width="220" height="90" rx="10" fill="#2E7D32" fillOpacity="0.05" />
-              <text x="290" y="140" fill="#2E7D32" fillOpacity="0.3" fontSize="10" fontWeight="bold" textAnchor="middle">Forest / Canopy Zone</text>
+        {/* Ocean Background Layer */}
+        <div className={`absolute inset-0 transition-colors duration-500 ${
+          mapMode === 'TERRAIN' ? 'bg-[#D2E2EE]' : 'bg-[#050D1A]'
+        }`} />
 
-              {/* Major Roads (Tubman Boulevard and Old Road) */}
-              <path d="M0,400 Q300,380 600,450 T900,420" fill="none" stroke="#D5DDE6" strokeWidth="16" opacity="0.9" />
-              <path d="M0,400 Q300,380 600,450 T900,420" fill="none" stroke="#7A8E99" strokeWidth="1.5" strokeDasharray="6,4" opacity="0.8" />
-              <text x="120" y="385" fill="#505A66" fillOpacity="0.7" fontSize="8" fontWeight="bold" transform="rotate(-3, 120, 385)">Tubman Boulevard</text>
+        <svg 
+          className="absolute inset-0 w-full h-full" 
+          viewBox={`0 0 ${mapWidth} ${mapHeight}`} 
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {/* 1. Liberia Landmass outline */}
+          <polygon
+            points={borderPointsString}
+            fill={mapMode === 'TERRAIN' ? '#EFF6F2' : '#111D33'}
+            stroke={mapMode === 'TERRAIN' ? '#C2DDD0' : '#1F3456'}
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+            className="transition-colors duration-500"
+          />
 
-              {/* Old Road linking branch */}
-              <path d="M220,388 Q350,260 500,280 T750,442" fill="none" stroke="#D5DDE6" strokeWidth="10" opacity="0.9" />
-              <path d="M220,388 Q350,260 500,280 T750,442" fill="none" stroke="#7A8E99" strokeWidth="1" strokeDasharray="4,4" opacity="0.8" />
-              <text x="420" y="265" fill="#505A66" fillOpacity="0.7" fontSize="8" fontWeight="bold">Old Road</text>
-            </svg>
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-[#0B132B] transition-colors duration-300">
-            {/* Grid structure overlay */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1b263b_1px,transparent_1px),linear-gradient(to_bottom,#1b263b_1px,transparent_1px)] bg-[size:30px_30px] opacity-40" />
-            
-            {/* Simulated Satellite Roads */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${mapWidth} ${mapHeight}`} preserveAspectRatio="none">
-              {/* Rivers in deep blue */}
-              <path d="M-50,250 Q150,180 300,280 T650,200 T850,220" fill="none" stroke="#1C3D5A" strokeWidth="24" opacity="0.5" />
-              
-              {/* Roads in bright lines */}
-              <path d="M0,400 Q300,380 600,450 T900,420" fill="none" stroke="#1D8F8A" strokeWidth="3" opacity="0.7" />
-              <path d="M220,388 Q350,260 500,280 T750,442" fill="none" stroke="#1D8F8A" strokeWidth="2" opacity="0.7" />
+          {/* 2. Swamps / Vegetation overlays (visual GIS cues) */}
+          {mapMode === 'TERRAIN' && (
+            <>
+              {/* Lofa / Northern forests */}
+              <path d="M 300,50 Q 330,80 390,40 T 420,120" fill="none" stroke="#D3EADF" strokeWidth="18" opacity="0.6" strokeLinecap="round" />
+              {/* Southeast forest zones */}
+              <path d="M 620,380 Q 690,410 740,390" fill="none" stroke="#D3EADF" strokeWidth="32" opacity="0.6" strokeLinecap="round" />
+            </>
+          )}
 
-              {/* Simulated structure cluster boxes */}
-              <circle cx="280" cy="320" r="15" fill="#D4A73B" fillOpacity="0.1" stroke="#D4A73B" strokeWidth="1" strokeDasharray="2,2" />
-              <circle cx="680" cy="350" r="25" fill="#D4A73B" fillOpacity="0.1" stroke="#D4A73B" strokeWidth="1" strokeDasharray="2,2" />
-            </svg>
-          </div>
-        )}
+          {/* 3. Grid line overlay for Satellite simulation */}
+          {mapMode === 'SATELLITE' && (
+            <g opacity="0.1" stroke="#38BDF8" strokeWidth="0.5">
+              <line x1="0" y1="100" x2={mapWidth} y2="100" />
+              <line x1="0" y1="200" x2={mapWidth} y2="200" />
+              <line x1="0" y1="300" x2={mapWidth} y2="300" />
+              <line x1="0" y1="400" x2={mapWidth} y2="400" />
+              <line x1="150" y1="0" x2="150" y2={mapHeight} />
+              <line x1="300" y1="0" x2="300" y2={mapHeight} />
+              <line x1="450" y1="0" x2="450" y2={mapHeight} />
+              <line x1="600" y1="0" x2="600" y2={mapHeight} />
+            </g>
+          )}
+
+          {/* 4. Infrastructure Transport Corridors (Highways) */}
+          {HIGHWAYS.map((hw, idx) => {
+            const pathPoints = hw.coords.map(pt => {
+              const { x, y } = projectCoords(pt.lat, pt.lon);
+              return `${x},${y}`;
+            }).join(' L ');
+
+            return (
+              <path
+                key={idx}
+                d={`M ${pathPoints}`}
+                fill="none"
+                stroke={mapMode === 'TERRAIN' ? '#E9A16E' : '#0EA5E9'}
+                strokeWidth={mapMode === 'TERRAIN' ? '2.5' : '1.5'}
+                strokeDasharray={mapMode === 'SATELLITE' ? '4,3' : 'none'}
+                opacity={mapMode === 'TERRAIN' ? '0.7' : '0.5'}
+              >
+                <title>{hw.name}</title>
+              </path>
+            );
+          })}
+        </svg>
 
         {/* GIS Compass Rose */}
         <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md p-2 rounded-xl border border-slate-700 text-white flex flex-col items-center shadow-lg">
-          <Compass className="w-6 h-6 text-sand-gold animate-spin-slow" />
+          <Compass className="w-5 h-5 text-sand-gold animate-spin-slow" />
           <span className="text-[8px] mt-1 font-bold">GIS NORTH</span>
         </div>
 
         {/* Zoom Controls */}
         <div className="absolute bottom-4 left-4 flex flex-col gap-1.5">
-          <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
+          <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2.5))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
             <ZoomIn className="w-4 h-4" />
           </button>
           <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.75))} className="w-8 h-8 rounded-lg bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white flex items-center justify-center cursor-pointer shadow-md transition-all">
@@ -231,16 +351,18 @@ export default function MapGIS() {
         </div>
 
         {/* Render Interactive GPS Markers on the Map */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div 
-            className="w-full h-full relative transition-transform duration-500 origin-center"
+            className="w-full h-full relative transition-transform duration-500 origin-center pointer-events-auto"
             style={{ transform: `scale(${zoomLevel})` }}
           >
             {filteredCommunities.map((comm) => {
               const { x, y } = projectCoords(comm.latitude, comm.longitude);
               const isSelected = selectedCommunity?.id === comm.id;
               
-              // Select color based on verification state
+              // Only render if coordinates falls within canvas viewport bounding box
+              if (x < 0 || x > mapWidth || y < 0 || y > mapHeight) return null;
+              
               const pinColor = 
                 comm.verificationState === 'VERIFIED' ? 'text-civic-green fill-civic-green/20' :
                 comm.verificationState === 'PENDING' ? 'text-sand-gold fill-sand-gold/20' : 'text-signal-red fill-signal-red/20';
@@ -258,8 +380,8 @@ export default function MapGIS() {
                   )}
                   
                   {/* Pin Icon */}
-                  <MapPin className={`w-6 h-6 transition-all duration-300 drop-shadow-lg ${pinColor} ${
-                    isSelected ? 'scale-125 stroke-[2.5px]' : 'group-hover:scale-110'
+                  <MapPin className={`w-5 h-5 transition-all duration-300 drop-shadow-lg ${pinColor} ${
+                    isSelected ? 'scale-125 stroke-[2.5px] text-primary-indigo' : 'group-hover:scale-110'
                   }`} />
                   
                   {/* Label tooltip */}
@@ -279,7 +401,7 @@ export default function MapGIS() {
         {/* Low latency connection notification */}
         <div className="absolute bottom-4 right-4 bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-md border border-slate-700 text-[8px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-md">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>LOCAL GIS DATA LOADED</span>
+          <span>NATIONWIDE GIS CONNECTED</span>
         </div>
       </div>
 
@@ -290,9 +412,9 @@ export default function MapGIS() {
             <div className="flex items-start justify-between border-b border-border-gray/30 pb-3">
               <div>
                 <h4 className="text-sm font-extrabold text-ink font-display leading-tight">{selectedCommunity.name}</h4>
-                <p className="text-[10px] text-body-gray">Township: {selectedCommunity.town}</p>
+                <p className="text-[10px] text-body-gray">{selectedCommunity.town}</p>
               </div>
-              <span className={`flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+              <span className={`flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border shrink-0 ${
                 selectedCommunity.verificationState === 'VERIFIED'
                   ? 'bg-civic-green/10 text-civic-green border-civic-green/20'
                   : selectedCommunity.verificationState === 'PENDING'
@@ -320,7 +442,7 @@ export default function MapGIS() {
                 </div>
                 <div>
                   <span className="text-body-gray block text-[8px]">ELEVATION</span>
-                  <span className="font-mono">{selectedCommunity.elevation} meters</span>
+                  <span className="font-mono">{selectedCommunity.elevation || '---'} meters</span>
                 </div>
                 <div>
                   <span className="text-body-gray block text-[8px]">ACCURACY INDEX</span>
@@ -353,15 +475,13 @@ export default function MapGIS() {
               </div>
             </div>
 
-            {selectedCommunity.id === 'comm-chugbor' && (
-              <div className="border border-primary-indigo/20 bg-primary-indigo/5 rounded-xl p-2.5 text-center">
-                <p className="text-[10px] font-semibold text-primary-indigo flex items-center justify-center gap-1">
-                  <Activity className="w-3.5 h-3.5 text-sand-gold fill-sand-gold/20" />
-                  <span>Interactive Drill-Down Available</span>
-                </p>
-                <p className="text-[9px] text-primary-indigo/80 mt-0.5">Approved NRCL profiles can be viewed in the Registry section.</p>
-              </div>
-            )}
+            <div className="border border-primary-indigo/20 bg-primary-indigo/5 rounded-xl p-2.5 text-center">
+              <p className="text-[10px] font-semibold text-primary-indigo flex items-center justify-center gap-1">
+                <Activity className="w-3.5 h-3.5 text-sand-gold fill-sand-gold/20" />
+                <span>Interactive Drill-Down Available</span>
+              </p>
+              <p className="text-[9px] text-primary-indigo/80 mt-0.5">Approved NRCL profiles can be viewed in the Registry section.</p>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center h-full text-body-gray">
@@ -372,8 +492,13 @@ export default function MapGIS() {
 
         <div className="pt-3 border-t border-border-gray/30 mt-auto">
           <a
-            href={`/registry/${selectedCommunity?.id || 'comm-chugbor'}`}
-            className="w-full py-2.5 rounded-xl bg-primary-indigo hover:bg-hover-indigo text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            href={`/registry/${selectedCommunity?.id || ''}`}
+            onClick={(e) => {
+              if (!selectedCommunity) e.preventDefault();
+            }}
+            className={`w-full py-2.5 rounded-xl bg-primary-indigo hover:bg-hover-indigo text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all ${
+              !selectedCommunity ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             <span>View Full Community Profile</span>
           </a>

@@ -9,12 +9,14 @@ export const metadata: Metadata = {
   description: "CLISPConnect formalizes community leadership structures across Liberia, creates a national GIS-enabled registry (NRCL), and enables weekly ground-truth reporting to the Ministry of Local Government.",
   icons: {
     icon: "/clef-logo.png",
-  }
+  },
+  manifest: "/manifest.json",
 };
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#0A3D91",
 };
 
 
@@ -47,6 +49,22 @@ export default async function RootLayout({
         </main>
 
         <Footer />
+
+        {/* PWA Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(reg) { console.log('PWA ServiceWorker registered:', reg.scope); },
+                    function(err) { console.log('PWA ServiceWorker failed:', err); }
+                  );
+                });
+              }
+            `
+          }}
+        />
       </body>
     </html>
   );

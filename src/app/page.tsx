@@ -2,9 +2,56 @@ import React from 'react';
 import Link from 'next/link';
 import Carousel from '../components/Carousel';
 import MapGIS from '../components/MapGIS';
+import prisma from '../lib/db';
 import { ShieldAlert, BookOpen, FileSpreadsheet, Map, Users, ChevronRight, HelpCircle, Check, Send } from 'lucide-react';
 
-export default function LandingPage() {
+export const revalidate = 0; // Fresh database queries on load
+
+export default async function LandingPage() {
+  // 1. Fetch live metrics from database
+  const countiesCount = await prisma.county.count();
+  const verifiedCommunities = await prisma.community.findMany({
+    where: { verificationState: 'VERIFIED' },
+    include: {
+      town: {
+        include: {
+          clan: {
+            include: {
+              district: {
+                include: {
+                  county: true
+                }
+              }
+            }
+          }
+        }
+      },
+      leaderProfiles: true,
+      weeklyReports: true,
+    }
+  });
+
+  const activeLeadersCount = await prisma.leaderProfile.count({
+    where: { status: 'ACTIVE' }
+  });
+
+  const totalReportsCount = await prisma.weeklyReport.count();
+
+  // 2. Format database records for GIS Map
+  const communitiesMapData = verifiedCommunities.map(c => ({
+    id: c.id,
+    name: c.name,
+    latitude: c.latitude,
+    longitude: c.longitude,
+    elevation: c.elevation || 0,
+    precision: c.precision,
+    verificationState: c.verificationState as any,
+    notes: c.officialNotes || 'Official registry record.',
+    town: `${c.town.name}, ${c.town.clan.district.county.name} County`,
+    leadersCount: c.leaderProfiles.length,
+    weeklyReportsCount: c.weeklyReports.length
+  }));
+
   return (
     <div className="space-y-20 pb-20">
       
@@ -15,8 +62,8 @@ export default function LandingPage() {
           {/* Text Content Left */}
           <div className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary-indigo/10 border border-primary-indigo/20 text-primary-indigo">
-              <span className="w-1.5 h-1.5 rounded-full bg-sand-gold animate-pulse" />
-              <span>Pilot Live: District #10, Montserrado</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-civic-green animate-pulse" />
+              <span>SYSTEM LIVE: NATIONWIDE REGISTRY</span>
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black font-display text-ink tracking-tight leading-none">
@@ -48,16 +95,16 @@ export default function LandingPage() {
             {/* Impact Metrics Grid */}
             <div className="grid grid-cols-3 gap-4 border-t border-border-gray/30 pt-8 mt-6">
               <div className="space-y-1">
-                <p className="text-2xl md:text-3xl font-black text-primary-indigo leading-none font-display">15</p>
+                <p className="text-2xl md:text-3xl font-black text-primary-indigo leading-none font-display">{countiesCount}</p>
                 <p className="text-[10px] font-bold text-body-gray uppercase tracking-wider">Counties Engaged</p>
               </div>
               <div className="space-y-1">
-                <p className="text-2xl md:text-3xl font-black text-coast-teal leading-none font-display">8</p>
-                <p className="text-[10px] font-bold text-body-gray uppercase tracking-wider">Pilot Communities</p>
+                <p className="text-2xl md:text-3xl font-black text-coast-teal leading-none font-display">{verifiedCommunities.length}</p>
+                <p className="text-[10px] font-bold text-body-gray uppercase tracking-wider">Verified Nodes</p>
               </div>
               <div className="space-y-1">
-                <p className="text-2xl md:text-3xl font-black text-civic-green leading-none font-display">75+</p>
-                <p className="text-[10px] font-bold text-body-gray uppercase tracking-wider">Leaders Trained</p>
+                <p className="text-2xl md:text-3xl font-black text-civic-green leading-none font-display">{activeLeadersCount}</p>
+                <p className="text-[10px] font-bold text-body-gray uppercase tracking-wider">Leaders Registered</p>
               </div>
             </div>
           </div>
@@ -76,7 +123,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <span className="text-[10px] uppercase font-bold text-body-gray tracking-widest">Sponsored & Overseen By</span>
-              <p className="text-xs font-bold text-primary-indigo">MLG Secretariat & CLEF National Steering Council</p>
+              <p className="text-xs font-bold text-primary-indigo">Ministry of Local Government (MLG) & CLEF Secretariat</p>
             </div>
             
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-75">
@@ -165,20 +212,20 @@ export default function LandingPage() {
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-10">
           <span className="text-xs font-extrabold uppercase text-primary-indigo tracking-widest">Live Interactive Map</span>
           <h2 className="text-3xl font-black text-ink font-display tracking-tight leading-none">
-            District #10 GIS Pilot Registry
+            Liberia National GIS Registry
           </h2>
           <p className="text-xs text-body-gray max-w-xl mx-auto">
-            Visualizing the pilot implementation in Montserrado County. Use the controls below to toggle layer filters, search community profiles, and inspect structured leadership boards.
+            Visualizing the national implementation across all 15 counties. Use the controls below to search community profiles, filter by county or status, zoom, and inspect leadership boards.
           </p>
         </div>
 
         {/* Embedded custom GIS Map */}
         <div className="p-2 sm:p-4 rounded-3xl glass-panel border border-border-gray/30 shadow-lg bg-white/20">
-          <MapGIS />
+          <MapGIS initialCommunities={communitiesMapData} />
         </div>
       </section>
 
-      {/* District #10 Pilot Implementation Stats */}
+      {/* District Pilot Implementation Stats */}
       <section className="bg-ink text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background visual graphics */}
         <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
@@ -186,10 +233,10 @@ export default function LandingPage() {
         
         <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-center relative">
           <div className="md:col-span-7 space-y-5">
-            <span className="text-xs font-bold uppercase tracking-wider text-sand-gold">Pilot Spotlight</span>
-            <h3 className="text-3xl font-black font-display tracking-tight">Montserrado District #10 Framework</h3>
+            <span className="text-xs font-bold uppercase tracking-wider text-sand-gold">National Profile</span>
+            <h3 className="text-3xl font-black font-display tracking-tight">Liberia National Decentralized Registry</h3>
             <p className="text-xs text-body-gray leading-relaxed">
-              District #10 serves as the primary incubator for the CLISPConnect digital blueprint. The pilot maps and structures eight key communities including Old Road Chugbor, Peace Island, Gayetown, and Matadi to construct the *Pilot Implementation Playbook* ahead of nationwide rollout.
+              CLISPConnect serves as the national digital database for decentralized governance. The platform maps and structures communities across all 15 counties, creating verified leadership registry boards and weekly incident reporting links directly to the Ministry of Local Government.
             </p>
             <ul className="space-y-2.5 text-xs text-body-gray">
               <li className="flex items-center gap-2">
@@ -198,7 +245,7 @@ export default function LandingPage() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-coast-teal" />
-                <span>Formal election verification & certificate generation for 75 community leaders.</span>
+                <span>Formal election verification & certificate generation for local leaders.</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-coast-teal" />
@@ -209,15 +256,15 @@ export default function LandingPage() {
 
           <div className="md:col-span-5 grid grid-cols-2 gap-4">
             <div className="bg-white/5 border border-white/15 p-5 rounded-2xl text-center space-y-1 backdrop-blur-sm">
-              <span className="text-3xl font-extrabold text-sand-gold font-display">100%</span>
-              <p className="text-[10px] text-body-gray font-semibold uppercase tracking-wider">Weekly Report rate</p>
+              <span className="text-3xl font-extrabold text-sand-gold font-display">{totalReportsCount}</span>
+              <p className="text-[10px] text-body-gray font-semibold uppercase tracking-wider">Reports Logged</p>
             </div>
             <div className="bg-white/5 border border-white/15 p-5 rounded-2xl text-center space-y-1 backdrop-blur-sm">
-              <span className="text-3xl font-extrabold text-sand-gold font-display">8 / 8</span>
+              <span className="text-3xl font-extrabold text-sand-gold font-display">{verifiedCommunities.length}</span>
               <p className="text-[10px] text-body-gray font-semibold uppercase tracking-wider">Communities Mapped</p>
             </div>
             <div className="bg-white/5 border border-white/15 p-5 rounded-2xl text-center space-y-1 backdrop-blur-sm">
-              <span className="text-3xl font-extrabold text-sand-gold font-display">75</span>
+              <span className="text-3xl font-extrabold text-sand-gold font-display">{activeLeadersCount}</span>
               <p className="text-[10px] text-body-gray font-semibold uppercase tracking-wider">Registered Councils</p>
             </div>
             <div className="bg-white/5 border border-white/15 p-5 rounded-2xl text-center space-y-1 backdrop-blur-sm">
@@ -279,7 +326,7 @@ export default function LandingPage() {
               Ready to secure last-mile governance in your district?
             </h3>
             <p className="text-xs md:text-sm text-white/90 leading-relaxed font-light">
-              CLEF and the Ministry of Local Government are preparing the next phase of community mapping. Sign up for technical resources, download the pilot playbook, or request registration guidelines.
+              CLEF and the Ministry of Local Government are mapping communities nationwide. Sign up for technical resources, download the implementation playbook, or request registration guidelines.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <input

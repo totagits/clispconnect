@@ -151,32 +151,42 @@ async function main() {
     await prisma.county.create({ data: c });
   }
 
-  console.log('Seeding District #10 (Montserrado) administrative tree...');
-  const district = await prisma.district.create({
-    data: {
-      id: 'MONT-D10',
-      name: 'District #10',
-      countyId: 'MONT',
-    },
+  // Seed Montserrado Pilot details
+  console.log('Seeding Montserrado Pilot Tiers...');
+  const districtMont = await prisma.district.create({
+    data: { id: 'MONT-D10', name: 'District #10', countyId: 'MONT' }
   });
-
-  const clan = await prisma.clan.create({
-    data: {
-      id: 'MONT-D10-C1',
-      name: 'Congotown Clan',
-      districtId: district.id,
-    },
+  const clanMont = await prisma.clan.create({
+    data: { id: 'MONT-D10-C1', name: 'Congotown Clan', districtId: districtMont.id }
   });
-
   const town1 = await prisma.town.create({
-    data: { id: 'MONT-D10-C1-T1', name: 'Congotown East', clanId: clan.id },
+    data: { id: 'MONT-D10-C1-T1', name: 'Congotown East', clanId: clanMont.id }
   });
   const town2 = await prisma.town.create({
-    data: { id: 'MONT-D10-C1-T2', name: 'Congotown West', clanId: clan.id },
+    data: { id: 'MONT-D10-C1-T2', name: 'Congotown West', clanId: clanMont.id }
   });
 
-  console.log('Seeding Communities in District #10 with GIS markers...');
+  // Seed default districts, clans, and towns for all other counties
+  console.log('Seeding Default Tiers for other counties...');
+  const otherCounties = counties.filter(c => c.id !== 'MONT');
+  const townMap = new Map<string, string>(); // Maps countyId to townId
+
+  for (const c of otherCounties) {
+    const dist = await prisma.district.create({
+      data: { id: `${c.id}-DIST-CENTRAL`, name: `${c.name} District Central`, countyId: c.id }
+    });
+    const cl = await prisma.clan.create({
+      data: { id: `${c.id}-CLAN-CENTRAL`, name: `${c.name} Clan Central`, districtId: dist.id }
+    });
+    const tw = await prisma.town.create({
+      data: { id: `${c.id}-TOWN-CENTRAL`, name: `${c.name} Town Central`, clanId: cl.id }
+    });
+    townMap.set(c.id, tw.id);
+  }
+
+  console.log('Seeding Communities with GIS markers...');
   const communities = [
+    // Montserrado Communities
     {
       id: 'comm-chugbor',
       name: 'Old Road Chugbor',
@@ -187,7 +197,7 @@ async function main() {
       precision: 'GPS_High_Precision',
       verificationState: 'VERIFIED',
       publicStatus: true,
-      officialNotes: 'Official CLEF Pilot headquarters. Fully mapped with structures cataloged.',
+      officialNotes: 'Official CLEF headquarters. Fully mapped with structures cataloged.',
     },
     {
       id: 'comm-gayetown',
@@ -273,6 +283,85 @@ async function main() {
       publicStatus: false,
       officialNotes: 'Boundary dispute with neighboring clan. Verification put on hold.',
     },
+
+    // Nimba
+    {
+      id: 'comm-sanniquellie',
+      name: 'Sanniquellie Community',
+      townId: townMap.get('NIMB')!,
+      latitude: 7.3621,
+      longitude: -8.7075,
+      elevation: 250.2,
+      precision: 'GPS_Standard',
+      verificationState: 'VERIFIED',
+      publicStatus: true,
+      officialNotes: 'Nimba northern hub. Registry complete.',
+    },
+    // Lofa
+    {
+      id: 'comm-voinjama',
+      name: 'Voinjama Community',
+      townId: townMap.get('LOFA')!,
+      latitude: 8.2140,
+      longitude: -9.8458,
+      elevation: 310.5,
+      precision: 'GPS_Standard',
+      verificationState: 'VERIFIED',
+      publicStatus: true,
+      officialNotes: 'Lofa high-elevation forest registry.',
+    },
+    // Grand Bassa
+    {
+      id: 'comm-buchanan',
+      name: 'Buchanan Community',
+      townId: townMap.get('GBAS')!,
+      latitude: 5.8808,
+      longitude: -10.0447,
+      elevation: 6.1,
+      precision: 'GPS_High_Precision',
+      verificationState: 'VERIFIED',
+      publicStatus: true,
+      officialNotes: 'Grand Bassa port community. Mapped successfully.',
+    },
+    // Sinoe
+    {
+      id: 'comm-greenville',
+      name: 'Greenville Community',
+      townId: townMap.get('SINO')!,
+      latitude: 5.0111,
+      longitude: -9.0388,
+      elevation: 4.8,
+      precision: 'GPS_Standard',
+      verificationState: 'VERIFIED',
+      publicStatus: true,
+      officialNotes: 'Sinoe coastal mapping center.',
+    },
+    // Margibi
+    {
+      id: 'comm-kakata',
+      name: 'Kakata Community',
+      townId: townMap.get('MARG')!,
+      latitude: 6.5152,
+      longitude: -10.3048,
+      elevation: 45.3,
+      precision: 'GPS_High_Precision',
+      verificationState: 'VERIFIED',
+      publicStatus: true,
+      officialNotes: 'Margibi transit and trading community.',
+    },
+    // Bong
+    {
+      id: 'comm-gbarnga',
+      name: 'Gbarnga Community',
+      townId: townMap.get('BONG')!,
+      latitude: 7.0090,
+      longitude: -9.7508,
+      elevation: 180.2,
+      precision: 'GPS_Standard',
+      verificationState: 'VERIFIED',
+      publicStatus: true,
+      officialNotes: 'Bong central development area.',
+    }
   ];
 
   for (const comm of communities) {
