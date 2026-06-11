@@ -4,8 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DemoUser, getRolePermissions } from '../lib/session';
-import RoleSwitcher from './RoleSwitcher';
-import { LayoutDashboard, Lock, Globe } from 'lucide-react';
+import { handleSignOut } from '../app/actions';
+import { LayoutDashboard, Lock, Globe, LogOut, User } from 'lucide-react';
 
 interface HeaderProps {
   currentUser: DemoUser;
@@ -92,7 +92,7 @@ export default function Header({ currentUser }: HeaderProps) {
             </Link>
           </nav>
 
-          {/* User Console Control & Switcher */}
+          {/* User Console Control & Sign Out */}
           <div className="flex items-center gap-3">
             {permissions.canViewConsole ? (
               <Link
@@ -107,22 +107,42 @@ export default function Header({ currentUser }: HeaderProps) {
                 <span className="hidden sm:inline">Command Center</span>
                 <span className="sm:hidden">Console</span>
               </Link>
+            ) : null}
+
+            {currentUser.role !== 'Public Visitor' ? (
+              <>
+                <div className="border-l border-border-gray/30 h-6 mx-1 hidden sm:block"></div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="hidden lg:flex flex-col text-right">
+                    <span className="text-[10px] font-bold text-ink leading-tight">{currentUser.name}</span>
+                    <span className="text-[8px] font-extrabold uppercase text-coast-teal leading-none">{currentUser.role}</span>
+                  </div>
+                  
+                  <form action={handleSignOut}>
+                    <button
+                      type="submit"
+                      className="flex items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold bg-signal-red/10 text-signal-red hover:bg-signal-red/20 border border-signal-red/10 transition-all cursor-pointer shadow-sm"
+                      title="Sign Out"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Sign Out</span>
+                    </button>
+                  </form>
+                </div>
+              </>
             ) : (
-              <button
-                onClick={() => {
-                  alert("Access Restricted: Public Visitors do not have console accounts. Please use the 'Demo Role' switcher on the right to simulate an administrator or leader profile!");
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold bg-body-gray/10 text-body-gray border border-body-gray/10 cursor-not-allowed"
-              >
-                <Lock className="w-3.5 h-3.5 text-body-gray/70" />
-                <span className="hidden sm:inline">Command Center</span>
-                <span className="sm:hidden">Console</span>
-              </button>
+              <>
+                <div className="border-l border-border-gray/30 h-6 mx-1"></div>
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold bg-primary-indigo text-white hover:bg-hover-indigo transition-all shadow-sm"
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Sign In</span>
+                </Link>
+              </>
             )}
-
-            <div className="border-l border-border-gray/30 h-6 mx-1 hidden sm:block"></div>
-
-            <RoleSwitcher currentUser={currentUser} />
           </div>
 
         </div>

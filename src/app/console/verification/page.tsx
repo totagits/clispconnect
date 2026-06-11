@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '../../../lib/db';
 import { getCurrentUser } from '../../../lib/auth';
 import { getRolePermissions } from '../../../lib/session';
-import Link from 'next/link';
+import ConsoleNav from '../../../components/ConsoleNav';
 import { CheckSquare, ShieldCheck, AlertCircle, FileText, CheckCircle2, XCircle, Award, Printer } from 'lucide-react';
 
 export const revalidate = 0; // Fresh database query for approvals queue
@@ -14,7 +14,11 @@ export default async function VerificationPage() {
   const permissions = getRolePermissions(currentUser.role);
 
   if (!permissions.canViewConsole) {
-    redirect('/');
+    redirect('/login?error=Please sign in to access the Command Center');
+  }
+
+  if (!permissions.canApproveLeaders) {
+    redirect('/console');
   }
 
   // Fetch pending verification requests
@@ -132,27 +136,8 @@ export default async function VerificationPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Console Sub-navigation Menu */}
-      <div className="flex flex-wrap items-center gap-1 bg-white/45 border border-border-gray/30 p-2 rounded-2xl glass-panel shadow-sm text-xs font-bold">
-        <Link href="/console" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Overview Dashboard
-        </Link>
-        <Link href="/console/reporting" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Field Reporting Module
-        </Link>
-        <Link href="/console/verification" className="px-3.5 py-2 rounded-xl bg-primary-indigo text-white">
-          Leadership Approvals
-        </Link>
-        <Link href="/console/training" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Capacity Building
-        </Link>
-        <Link href="/console/helpdesk" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Community Helpdesk
-        </Link>
-        <Link href="/console/settings" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          System Control Panel
-        </Link>
-      </div>
+      {/* Dynamic Console Sub-navigation */}
+      <ConsoleNav currentUser={currentUser} activeTab="verification" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         

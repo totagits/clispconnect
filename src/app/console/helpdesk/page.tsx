@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '../../../lib/db';
 import { getCurrentUser } from '../../../lib/auth';
 import { getRolePermissions } from '../../../lib/session';
-import Link from 'next/link';
+import ConsoleNav from '../../../components/ConsoleNav';
 import { HelpCircle, AlertCircle, CheckCircle2, RefreshCw, MessageSquare, Tag, Clock } from 'lucide-react';
 
 export const revalidate = 0; // Fresh database query for helpdesk queue
@@ -14,7 +14,12 @@ export default async function HelpdeskModulePage() {
   const permissions = getRolePermissions(currentUser.role);
 
   if (!permissions.canViewConsole) {
-    redirect('/');
+    redirect('/login?error=Please sign in to access the Command Center');
+  }
+
+  const isAuthorized = permissions.canManageHelpdesk || permissions.isNationalAdmin || permissions.isCoordinator;
+  if (!isAuthorized) {
+    redirect('/console');
   }
 
   // Fetch all tickets from the database
@@ -57,27 +62,8 @@ export default async function HelpdeskModulePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Console Sub-navigation Menu */}
-      <div className="flex flex-wrap items-center gap-1 bg-white/45 border border-border-gray/30 p-2 rounded-2xl glass-panel shadow-sm text-xs font-bold">
-        <Link href="/console" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Overview Dashboard
-        </Link>
-        <Link href="/console/reporting" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Field Reporting Module
-        </Link>
-        <Link href="/console/verification" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Leadership Approvals
-        </Link>
-        <Link href="/console/training" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Capacity Building
-        </Link>
-        <Link href="/console/helpdesk" className="px-3.5 py-2 rounded-xl bg-primary-indigo text-white">
-          Community Helpdesk
-        </Link>
-        <Link href="/console/settings" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          System Control Panel
-        </Link>
-      </div>
+      {/* Dynamic Console Sub-navigation */}
+      <ConsoleNav currentUser={currentUser} activeTab="helpdesk" />
 
       <div className="p-5 rounded-2xl glass-panel border border-border-gray/30 shadow-md space-y-4">
         

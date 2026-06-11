@@ -12,3 +12,20 @@ export async function getCurrentUser(): Promise<DemoUser> {
   
   return DEMO_USERS.find(u => u.email === email) || DEMO_USERS[0];
 }
+
+export async function loginUser(email: string) {
+  const cookieStore = await cookies();
+  cookieStore.set('clisp_email', email, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24, // 1 day
+    path: '/'
+  });
+}
+
+export async function logoutUser() {
+  const cookieStore = await cookies();
+  cookieStore.delete('clisp_email');
+}
+

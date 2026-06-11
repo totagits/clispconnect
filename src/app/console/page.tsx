@@ -4,8 +4,7 @@ import prisma from '../../lib/db';
 import { getCurrentUser } from '../../lib/auth';
 import { getRolePermissions } from '../../lib/session';
 import ConsoleDashboard from '../../components/ConsoleDashboard';
-import Link from 'next/link';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import ConsoleNav from '../../components/ConsoleNav';
 
 export const revalidate = 0; // Fresh database query for console actions
 
@@ -13,30 +12,8 @@ export default async function ConsolePage() {
   const currentUser = await getCurrentUser();
   const permissions = getRolePermissions(currentUser.role);
 
-  // If the simulated user is a Public Visitor, block console access and redirect
   if (!permissions.canViewConsole) {
-    return (
-      <div className="max-w-md mx-auto my-16 p-8 rounded-3xl glass-panel border border-border-gray/30 text-center space-y-6 shadow-lg">
-        <div className="w-12 h-12 rounded-2xl bg-signal-red/10 flex items-center justify-center text-signal-red mx-auto">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-lg font-black text-ink font-display uppercase">Access Restricted</h2>
-          <p className="text-xs text-body-gray leading-relaxed">
-            Public visitors do not have console clearance. To inspect the internal dashboards, please select a demo staff role in the header dropdown!
-          </p>
-        </div>
-        <div className="pt-2">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-xs font-bold text-primary-indigo hover:underline"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Return to Landing Page</span>
-          </Link>
-        </div>
-      </div>
-    );
+    redirect('/login?error=Please sign in to access the Command Center');
   }
 
   // Fetch KPI counts
@@ -81,27 +58,8 @@ export default async function ConsolePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Console Sub-navigation Menu */}
-      <div className="flex flex-wrap items-center gap-1 bg-white/45 border border-border-gray/30 p-2 rounded-2xl glass-panel shadow-sm text-xs font-bold">
-        <Link href="/console" className="px-3.5 py-2 rounded-xl bg-primary-indigo text-white">
-          Overview Dashboard
-        </Link>
-        <Link href="/console/reporting" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Field Reporting Module
-        </Link>
-        <Link href="/console/verification" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Leadership Approvals
-        </Link>
-        <Link href="/console/training" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Capacity Building
-        </Link>
-        <Link href="/console/helpdesk" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          Community Helpdesk
-        </Link>
-        <Link href="/console/settings" className="px-3.5 py-2 rounded-xl text-body-gray hover:text-primary-indigo hover:bg-canvas-light">
-          System Control Panel
-        </Link>
-      </div>
+      {/* Dynamic Console Sub-navigation */}
+      <ConsoleNav currentUser={currentUser} activeTab="overview" />
 
       {/* Main Console View */}
       <ConsoleDashboard
