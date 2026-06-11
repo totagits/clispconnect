@@ -79,6 +79,26 @@ export default function Header({ currentUser }: HeaderProps) {
               Map View
             </Link>
             <Link
+              href="/verify"
+              className={`px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                pathname === '/verify'
+                  ? 'bg-primary-indigo/5 text-primary-indigo font-bold'
+                  : 'text-body-gray hover:text-primary-indigo hover:bg-canvas-light'
+              }`}
+            >
+              Verify Credentials
+            </Link>
+            <Link
+              href="/helpdesk"
+              className={`px-3 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all ${
+                pathname === '/helpdesk'
+                  ? 'bg-primary-indigo/5 text-primary-indigo font-bold'
+                  : 'text-body-gray hover:text-primary-indigo hover:bg-canvas-light'
+              }`}
+            >
+              Support & Helpdesk
+            </Link>
+            <Link
               href="/#faq"
               className="px-3 py-2 rounded-xl text-xs font-semibold tracking-wide text-body-gray hover:text-primary-indigo hover:bg-canvas-light transition-all"
             >

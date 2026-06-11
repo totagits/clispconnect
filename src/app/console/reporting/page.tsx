@@ -103,6 +103,35 @@ export default async function ReportingModulePage() {
     revalidatePath('/console/reporting');
   }
 
+  // Server Action to submit a response/feedback to a weekly report
+  async function handleRespondReport(formData: FormData) {
+    'use server';
+
+    const reportId = formData.get('reportId') as string;
+    const officialResponse = formData.get('officialResponse') as string;
+
+    if (!reportId || !officialResponse) return;
+
+    await prisma.weeklyReport.update({
+      where: { id: reportId },
+      data: {
+        officialResponse,
+        status: 'REVIEWED', // Mark the status as reviewed when responded
+      }
+    });
+
+    // Log this action
+    await prisma.auditLog.create({
+      data: {
+        action: 'REPORT_RESPOND',
+        details: `Coordinator responded to weekly report ID [${reportId}]. Feedback: ${officialResponse.substring(0, 100)}`,
+        userId: currentUser.email,
+      }
+    });
+
+    revalidatePath('/console/reporting');
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
@@ -407,6 +436,28 @@ export default async function ReportingModulePage() {
                         <strong className="text-[9px] uppercase text-primary-indigo block tracking-wider">MLG Coordinator Feedback</strong>
                         <p className="text-[10px] text-primary-indigo/80 leading-normal mt-0.5 italic">"{rep.officialResponse}"</p>
                       </div>
+                    )}
+
+                    {/* Coordinator Response Form */}
+                    {(permissions.isNationalAdmin || permissions.isCoordinator || currentUser.role === 'Super Admin') && (
+                      <form className="mt-2 pt-2 border-t border-border-gray/10 flex gap-2">
+                        <input type="hidden" name="reportId" value={rep.id} />
+                        <input
+                          type="text"
+                          name="officialResponse"
+                          defaultValue={rep.officialResponse || ''}
+                          placeholder="Provide coordinator feedback..."
+                          required
+                          className="px-2.5 py-1 text-[10px] rounded-lg glass-input text-ink w-full"
+                        />
+                        <button
+                          formAction={handleRespondReport}
+                          className="py-1 px-3 rounded-lg bg-primary-indigo hover:bg-hover-indigo text-white font-bold text-[9px] flex items-center gap-1 transition-all cursor-pointer shrink-0"
+                        >
+                          <Send className="w-2.5 h-2.5 animate-pulse" />
+                          <span>Reply</span>
+                        </button>
+                      </form>
                     )}
 
                     {/* Reporter details */}
